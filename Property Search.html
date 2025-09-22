@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Address App</title>
+    <!-- We're using a special toolbox called Tailwind CSS to make our app look good! -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* This is like giving our app a cool personality. We're setting the font for the whole page. */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* This is a special rule to make sure the app looks good on all screen sizes. */
+        .container {
+            max-width: 90%;
+        }
+        /* We can add our own custom styles here too, for things that don't have a Tailwind class. */
+        .glow {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- This is the main box where our app will live. It's a "card" for our cool content. -->
+    <div class="container bg-white p-8 md:p-12 rounded-2xl shadow-xl border-t-8 border-indigo-600 flex flex-col items-center text-center max-w-lg w-full transition-all duration-300 transform scale-100 glow">
+        
+        <!-- A friendly title to greet the user. -->
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-800 mb-2">My Address App</h1>
+        <p class="text-gray-500 mb-6 text-sm md:text-base">
+            Type your address or postal code below!
+        </p>
+
+        <!-- This is the box where you can type. The "placeholder" is the hint text inside it. -->
+        <input 
+            type="text" 
+            id="addressInput" 
+            placeholder="e.g., 123 Fun Street or S123456" 
+            class="w-full p-3 md:p-4 mb-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200 text-sm md:text-base">
+        
+        <!-- This is the button you'll click to submit the address. -->
+        <button 
+            id="submitButton" 
+            class="w-full bg-indigo-600 text-white font-bold p-3 md:p-4 rounded-xl shadow-md hover:bg-indigo-700 transition-colors duration-200 text-sm md:text-base cursor-pointer transform hover:scale-105">
+            Save Address
+        </button>
+
+        <!-- This is a special box where we will show the result after you click the button. -->
+        <div id="resultBox" class="w-full mt-6 p-4 rounded-xl bg-gray-100 text-gray-700 text-left text-sm md:text-base hidden transition-opacity duration-300 opacity-0">
+            <!-- This is where the result text will be. -->
+        </div>
+
+    </div>
+
+    <script>
+        // This is where we write the instructions for our app to follow.
+        
+        // First, we find the important parts of our app by their special IDs.
+        const addressInput = document.getElementById('addressInput');
+        const submitButton = document.getElementById('submitButton');
+        const resultBox = document.getElementById('resultBox');
+
+        // This is a function, like a mini-robot, that will run when you click the button.
+        function handleSubmission() {
+            // We get the words you typed in the input box.
+            const userAddress = addressInput.value.trim(); // .trim() just removes any extra spaces.
+
+            // Now, we check if you typed anything at all.
+            if (userAddress === '') {
+                // If the box is empty, we tell you to type something.
+                resultBox.textContent = "Oops! Please enter an address or postal code first.";
+                resultBox.classList.remove('hidden', 'opacity-0');
+                resultBox.classList.add('block', 'opacity-100');
+            } else {
+                // If you typed something, we show you what you wrote in a friendly message!
+                resultBox.innerHTML = `
+                    <p class="font-bold">Address Saved!</p>
+                    <p>You entered: <span class="text-indigo-600 font-medium">${userAddress}</span></p>
+                `;
+                resultBox.classList.remove('hidden', 'opacity-0');
+                resultBox.classList.add('block', 'opacity-100');
+                
+                // We clear the box so you can type a new address if you want.
+                addressInput.value = '';
+            }
+        }
+
+        // We tell our app to listen for a "click" on the button.
+        // When it hears the click, it will run our mini-robot function!
+        submitButton.addEventListener('click', handleSubmission);
+
+        // This lets you also press the "Enter" key to submit your address.
+        addressInput.addEventListener('keydown', function(event) {
+            // Check if the key that was pressed is the "Enter" key.
+            if (event.key === 'Enter') {
+                // Prevent the default behavior of the enter key (like submitting a form and refreshing the page)
+                event.preventDefault();
+                // Then, run our special mini-robot function.
+                handleSubmission();
+            }
+        });
+
+    </script>
+</body>
+</html>
