@@ -1,4 +1,4 @@
-html>
+!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -13,6 +13,7 @@ html>
         .input-group { display: flex; flex-direction: column; }
         .input-field { transition: border-color 0.2s, box-shadow 0.2s; }
         .input-error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4); }
+        .bg-disabled { background-color: #e5e7eb !important; } /* Tailwind gray-200 */
     </style>
 </head>
 <body class="p-4 sm:p-8 flex justify-center">
@@ -52,10 +53,10 @@ html>
                     <input type="number" id="yearOfBirth" placeholder="e.g., 1995" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 
-                <!-- 4. Deduction Tier -->
+                <!-- 4. Deduction Tier - Added onchange event -->
                 <div class="input-group">
                     <label for="deductionTier" class="text-gray-600 font-medium mb-1">Fixed Expense Deduction Tier:</label>
-                    <select id="deductionTier" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <select id="deductionTier" onchange="handleTierChange()" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="1">1: Low (Foot, Public Transport) - 20%</option>
                         <option value="2">2: Medium (PMD/PAB/Motorcycle) - 35%</option>
                         <option value="3" selected>3: High (Car/Van) - 60%</option>
@@ -65,10 +66,11 @@ html>
                 <!-- 5. Motorized Mode Multiplier Check -->
                 <div class="input-group sm:col-span-2">
                     <label for="modeMultiplier" class="text-gray-600 font-medium mb-1">Mode Multiplier Check (Type 2, +10% Deduction):</label>
-                    <select id="modeMultiplier" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <select id="modeMultiplier" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-disabled" disabled>
                         <option value="1" selected>1: No Multiplier Applied</option>
                         <option value="2">2: Apply 10% Multiplier (If using motorized PMD/PAB/Motorcycle)</option>
                     </select>
+                    <p id="multiplierNote" class="text-xs text-gray-500 mt-1">Multiplier is automatically disabled for Tier 3.</p>
                 </div>
             </div>
 
@@ -145,7 +147,8 @@ html>
         function calculateNetIncome(year, earnIncome, deductionTier, modeMultiplier) {
             let deductionRate = DEDUCTION_RATES[year]?.[deductionTier] || 0;
 
-            // Apply 10% multiplier if modeMultiplier is 2
+            // Apply 10% multiplier ONLY if it is manually selected (value 2)
+            // Note: handleTierChange() will ensure it is set to 1 for Tier 3
             if (modeMultiplier === 2) {
                 deductionRate *= 1.1;
             }
@@ -187,13 +190,34 @@ html>
             }
         }
 
+        // NEW: Handles enabling/disabling the Multiplier based on Tier selection
+        function handleTierChange() {
+            const tierSelect = document.getElementById('deductionTier');
+            const multiplierSelect = document.getElementById('modeMultiplier');
+            const multiplierNote = document.getElementById('multiplierNote');
+            
+            // Tier 3 (value '3') typically does not use the multiplier
+            if (tierSelect.value === '3') {
+                multiplierSelect.value = '1'; // Force "No Multiplier"
+                multiplierSelect.disabled = true;
+                multiplierSelect.classList.add('bg-disabled');
+                multiplierNote.textContent = 'Multiplier is automatically disabled for Tier 3.';
+            } else {
+                multiplierSelect.disabled = false;
+                multiplierSelect.classList.remove('bg-disabled');
+                multiplierNote.textContent = 'Apply 10% multiplier if using motorized PMD/PAB/Motorcycle (Tier 2).';
+            }
+        }
+
         function resetForm() {
             // Clear input fields and reset dropdowns to defaults
             document.getElementById('year').value = 2025;
             document.getElementById('earnIncome').value = '';
             document.getElementById('yearOfBirth').value = '';
             document.getElementById('deductionTier').value = 3; 
-            document.getElementById('modeMultiplier').value = 1; 
+            
+            // Re-apply tier change logic on reset to ensure the multiplier is disabled for default Tier 3
+            handleTierChange();
 
             // Clear error highlights
             highlightError('earnIncome', false);
@@ -221,7 +245,8 @@ html>
             const earnIncomeInput = document.getElementById('earnIncome');
             const yearOfBirthInput = document.getElementById('yearOfBirth');
             const deductionTier = parseInt(document.getElementById('deductionTier').value);
-            const modeMultiplier = parseInt(document.getElementById('modeMultiplier').value);
+            // Read value, note: if disabled, it will be '1' due to handleTierChange()
+            const modeMultiplier = parseInt(document.getElementById('modeMultiplier').value); 
             
             // 2. Validation
             const earnIncome = parseFloat(earnIncomeInput.value);
@@ -271,11 +296,13 @@ html>
             document.getElementById('wisValue').classList.value = `text-right font-bold text-lg text-${wisEligibility.color}`;
         }
         
-        // Initial setup: start with empty inputs
+        // Initial setup: start with empty inputs and ensure the initial state of the multiplier is correct
         document.addEventListener('DOMContentLoaded', () => {
              document.getElementById('yearOfBirth').value = '';
              document.getElementById('earnIncome').value = '';
-             // No initial calculation is performed, leaving the output empty.
+             
+             // Ensure the multiplier is disabled by default since Tier 3 is selected by default in the HTML
+             handleTierChange(); 
         });
 
     </script>
