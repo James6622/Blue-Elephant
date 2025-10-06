@@ -1,306 +1,249 @@
-import tkinter as tk
-from tkinter import messagebox
-from datetime import datetime
 
-# --- Financial Constants (Simplified and illustrative, based on known Singapore policies) ---
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Worker Financial Calculator (SG)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for professional look and feel */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .input-group { display: flex; flex-direction: column; }
+        .input-field { transition: border-color 0.2s, box-shadow 0.2s; }
+        .input-error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4); }
+    </style>
+</head>
+<body class="p-4 sm:p-8 flex justify-center">
 
-class IncomeCalculator:
-    """
-    Calculates net income, CPF contribution (age-dependent), PCTS amount,
-    and WIS eligibility based on Singapore's Platform Worker schemes (2025-2028).
-    
-    NOTE: The CPF rates used here are simplified projections for demonstration.
-    Real-world rates are highly complex and depend on both age and year.
-    """
+    <div id="app-container" class="w-full max-w-xl bg-white rounded-xl shadow-2xl overflow-hidden">
+        <header class="bg-indigo-700 text-white p-6 text-center">
+            <h1 class="text-2xl font-bold">Singapore Platform Worker Calculator</h1>
+            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028)</p>
+        </header>
 
-    # Deduction rates based on the fixed expense deductible tiers (1, 2, 3)
-    # Tier 1: Low deduction, Tier 3: High deduction (e.g., for car/van use)
-    DEDUCTION_RATES = {
-        2025: {1: 0.20, 2: 0.35, 3: 0.60},
-        2026: {1: 0.20, 2: 0.35, 3: 0.60},
-        2027: {1: 0.20, 2: 0.35, 3: 0.60},
-        2028: {1: 0.20, 2: 0.35, 3: 0.60}
-    }
-
-    # PCTS rates (Percentage of income contributed to tax scheme)
-    PCTS_RATES = {
-        2025: 0.025, 
-        2026: 0.050 * 0.75, # Example phase-in rate
-        2027: 0.070 * 0.50,
-        2028: 0.090 * 0.25
-    }
-
-    # CPF Rates (Employee Share for Platform Workers CPF Transition)
-    # The rates are simplified based on age band for the given year.
-    CPF_RATES = {
-        2025: {'55_and_below': 0.135, 'above_55': 0.090},
-        2026: {'55_and_below': 0.155, 'above_55': 0.100},
-        2027: {'55_and_below': 0.180, 'above_55': 0.110},
-        2028: {'55_and_below': 0.200, 'above_55': 0.120}
-    }
-
-    def __init__(self, year, year_of_birth, earn_income, deduction_tier, type_of_mode):
-        """Initializes the calculator with parameters."""
-        self.year = year
-        self.year_of_birth = year_of_birth
-        self.earn_income = earn_income
-        self.deduction_tier = deduction_tier # Maps to fixed_expense_deductable_amount
-        self.type_of_mode = type_of_mode     # Used for the 1.1x multiplier check
-
-    def calculate_age(self):
-        """Calculates the worker's age in the specified calculation year."""
-        current_year = datetime.now().year
-        # Use the calculation year to determine the age for correct CPF band lookup
-        return self.year - self.year_of_birth
-
-    def calculate_net_income(self):
-        """Calculates the net income after deducting the fixed expense."""
-        
-        # 1. Get the base deduction rate based on the tier
-        deduction_rate = self.DEDUCTION_RATES.get(self.year, {}).get(self.deduction_tier, 0)
-
-        # 2. Adjust deduction rate based on type of mode (Type 2 gets a 10% increase in deduction)
-        # Type 2 is typically for motorized PMDs, PABs, or motorcycles (from original code comments)
-        if self.type_of_mode == 2:
-            deduction_rate *= 1.1 
-
-        net_income = self.earn_income * (1 - deduction_rate)
-        return round(net_income, 2)
-
-    def get_cpf_rate(self, age):
-        """Retrieves the age-dependent CPF rate for the given year."""
-        year_rates = self.CPF_RATES.get(self.year, {})
-        
-        # Age bands are crucial for Singapore's CPF system
-        if age <= 55:
-            return year_rates.get('55_and_below', 0)
-        else:
-            return year_rates.get('above_55', 0)
-
-    def calculate_cpf_contribution(self):
-        """Calculates the CPF contribution based on net income and age."""
-        net_income = self.calculate_net_income()
-        age = self.calculate_age()
-
-        cpf_rate = self.get_cpf_rate(age)
-        
-        # Contribution is capped, but for this simplified model, we use the simple rate multiplication.
-        return round(net_income * cpf_rate, 2)
-
-    def calculate_pcts_amount(self, net_income):
-        """Calculates the PCTS amount. PCTS is not payable if income is too high."""
-        # PCTS (Platform Centralised Tax Scheme) eligibility threshold (Illustrative)
-        PCTS_THRESHOLD = 3000 
-
-        if net_income >= PCTS_THRESHOLD:
-            return 0
+        <!-- Input Section -->
+        <div id="input-frame" class="p-6 space-y-4 bg-blue-50">
+            <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Input Parameters</h2>
             
-        pcts_rate = self.PCTS_RATES.get(self.year, 0)
-        return round(net_income * pcts_rate, 2)
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <!-- 1. Year Selection -->
+                <div class="input-group">
+                    <label for="year" class="text-gray-600 font-medium mb-1">Calculation Year:</label>
+                    <select id="year" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                    </select>
+                </div>
 
-    def calculate_wis_eligibility(self, net_income):
-        """Determines Workfare Income Supplement (WIS) eligibility based on net income."""
-        # WIS Eligibility is defined by a monthly income range (Illustrative)
-        MIN_INCOME_WIS = 500
-        MAX_INCOME_WIS = 3000
-        
-        if MIN_INCOME_WIS <= net_income <= MAX_INCOME_WIS:
-            return "eligible"
-        else:
-            return "not eligible"
+                <!-- 2. Monthly Earn Income -->
+                <div class="input-group">
+                    <label for="earnIncome" class="text-gray-600 font-medium mb-1">Monthly Earn Income (S$):</label>
+                    <input type="number" id="earnIncome" placeholder="e.g., 2500" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <!-- 3. Year of Birth -->
+                <div class="input-group">
+                    <label for="yearOfBirth" class="text-gray-600 font-medium mb-1">Year of Birth:</label>
+                    <input type="number" id="yearOfBirth" placeholder="e.g., 1995" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <!-- 4. Deduction Tier -->
+                <div class="input-group">
+                    <label for="deductionTier" class="text-gray-600 font-medium mb-1">Fixed Expense Deduction Tier:</label>
+                    <select id="deductionTier" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="1">1: Low (Foot, Public Transport) - 20%</option>
+                        <option value="2">2: Medium (PMD/PAB/Motorcycle) - 35%</option>
+                        <option value="3" selected>3: High (Car/Van) - 60%</option>
+                    </select>
+                </div>
 
-    def get_results(self):
-        """Returns all calculated results."""
-        net_income = self.calculate_net_income()
-        
-        pcts_amount = self.calculate_pcts_amount(net_income)
-        cpf_contribution = self.calculate_cpf_contribution()
-        wis_eligibility = self.calculate_wis_eligibility(net_income)
-        
-        return net_income, pcts_amount, cpf_contribution, wis_eligibility
+                <!-- 5. Motorized Mode Multiplier Check -->
+                <div class="input-group sm:col-span-2">
+                    <label for="modeMultiplier" class="text-gray-600 font-medium mb-1">Mode Multiplier Check (Type 2, +10% Deduction):</label>
+                    <select id="modeMultiplier" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="1" selected>1: No Multiplier Applied</option>
+                        <option value="2">2: Apply 10% Multiplier (If using motorized PMD/PAB/Motorcycle)</option>
+                    </select>
+                </div>
+            </div>
 
+            <button onclick="calculate()" class="w-full mt-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-[1.01]">
+                Calculate Financial Benefits
+            </button>
+        </div>
 
-# --- Tkinter Application (GUI) ---
+        <!-- Result Section -->
+        <div id="output-frame" class="p-6 space-y-3 bg-yellow-50">
+            <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Calculation Results</h2>
 
-class MenuApp(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Platform Worker Financial Calculator (SG)")
-        self.geometry("450x550")
-        self.config(padx=20, pady=20)
-        
-        # Ensure the Tkinter validator is registered
-        self.int_validate_cmd = self.register(self._validate_input)
-        
-        self._setup_ui()
+            <div class="grid grid-cols-2 gap-y-3">
+                <span class="font-medium text-gray-600">Net Income:</span>
+                <span id="netIncomeValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
 
-    def _setup_ui(self):
-        """Sets up the input and output frames."""
-        
-        # Header
-        tk.Label(self, text="Platform Worker CPF & Benefits", font=("Arial", 16, "bold"), fg="#1e3a8a").pack(pady=(0, 15))
+                <span class="font-medium text-gray-600">CPF Contribution (Employee Share):</span>
+                <span id="cpfValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
+                
+                <span class="font-medium text-gray-600">PCTS Amount:</span>
+                <span id="pctsValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
 
-        # --- Input Frame (Blue-100 equivalent) ---
-        self.input_frame = tk.Frame(self, padx=10, pady=10, bg="#dbeafe", bd=1, relief=tk.RIDGE)
-        self.input_frame.pack(fill=tk.X, pady=10)
-        
-        tk.Label(self.input_frame, text="Input Parameters", font=("Arial", 12, "bold"), bg="#dbeafe").grid(row=0, columnspan=2, pady=(0, 10))
+                <span class="font-medium text-gray-600">WIS Eligibility:</span>
+                <span id="wisValue" class="text-right font-bold text-lg text-gray-500">--</span>
+            </div>
+        </div>
+    </div>
 
-        # Input variables
-        self.year_var = tk.StringVar(self, value="2025")
-        self.earn_income_var = tk.StringVar(self, value="")
-        self.year_of_birth_var = tk.StringVar(self, value="")
-        self.type_of_mode_var = tk.StringVar(self, value="1") # 1 or 2 for multiplier check
+    <script>
+        // --- Financial Constants (Equivalent to Python Class) ---
+        const DEDUCTION_RATES = {
+            2025: { 1: 0.20, 2: 0.35, 3: 0.60 },
+            2026: { 1: 0.20, 2: 0.35, 3: 0.60 },
+            2027: { 1: 0.20, 2: 0.35, 3: 0.60 },
+            2028: { 1: 0.20, 2: 0.35, 3: 0.60 }
+        };
 
-        # 1. Year Selection
-        self._create_input(self.input_frame, "Year:", 1, [2025, 2026, 2027, 2028], self.year_var)
+        const PCTS_RATES = {
+            2025: 0.025,
+            2026: 0.050 * 0.75,
+            2027: 0.070 * 0.50,
+            2028: 0.090 * 0.25
+        };
 
-        # 2. Earn Income (Monthly)
-        tk.Label(self.input_frame, text="Monthly Earn Income ($):", anchor="w").grid(row=2, column=0, sticky="w", pady=5)
-        self.earn_income_entry = tk.Entry(self.input_frame, textvariable=self.earn_income_var, validate="key", validatecommand=(self.int_validate_cmd, '%P', '%W'))
-        self.earn_income_entry.grid(row=2, column=1, sticky="ew", pady=5, padx=5)
+        // Simplified CPF Rates (Employee Share) based on age band for the given year
+        const CPF_RATES = {
+            2025: { '55_and_below': 0.135, 'above_55': 0.090 },
+            2026: { '55_and_below': 0.155, 'above_55': 0.100 },
+            2027: { '55_and_below': 0.180, 'above_55': 0.110 },
+            2028: { '55_and_below': 0.200, 'above_55': 0.120 }
+        };
 
-        # 3. Year of Birth
-        tk.Label(self.input_frame, text="Year of Birth:", anchor="w").grid(row=3, column=0, sticky="w", pady=5)
-        self.year_of_birth_entry = tk.Entry(self.input_frame, textvariable=self.year_of_birth_var, validate="key", validatecommand=(self.int_validate_cmd, '%P', '%W'))
-        self.year_of_birth_entry.grid(row=3, column=1, sticky="ew", pady=5, padx=5)
-        
-        # 4. Deduction Tier (Maps to fixed_expense_deductable_amount)
-        # We simplify the original two confusing fields into two clearer ones.
-        deduction_options = {
-            1: "Tier 1: Foot/Public Transport (Rate 20%)",
-            2: "Tier 2: PMD/PAB/Motorcycle (Rate 35%)",
-            3: "Tier 3: Car/Van (Rate 60%)"
+        // --- Core Calculation Logic ---
+
+        function calculateAge(yearOfBirth, calculationYear) {
+            return calculationYear - yearOfBirth;
         }
-        self.deduction_tier_var = tk.StringVar(self, value=deduction_options[3]) # Default to highest rate
-        self._create_input(self.input_frame, "Deduction Tier:", 4, deduction_options.values(), self.deduction_tier_var)
+
+        function getCpfRate(year, age) {
+            const yearRates = CPF_RATES[year] || {};
+            if (age <= 55) {
+                return yearRates['55_and_below'] || 0;
+            } else {
+                return yearRates['above_55'] || 0;
+            }
+        }
+
+        function calculateNetIncome(year, earnIncome, deductionTier, modeMultiplier) {
+            let deductionRate = DEDUCTION_RATES[year]?.[deductionTier] || 0;
+
+            // Apply 10% multiplier if modeMultiplier is 2
+            if (modeMultiplier === 2) {
+                deductionRate *= 1.1;
+            }
+
+            const netIncome = earnIncome * (1 - deductionRate);
+            return parseFloat(netIncome.toFixed(2));
+        }
+
+        function calculatePctsAmount(year, netIncome) {
+            const PCTS_THRESHOLD = 3000;
+            if (netIncome >= PCTS_THRESHOLD) {
+                return 0;
+            }
+            const pctsRate = PCTS_RATES[year] || 0;
+            return parseFloat((netIncome * pctsRate).toFixed(2));
+        }
         
-        # 5. Type of Mode (For 1.1x multiplier check - original code logic)
-        self._create_input(self.input_frame, "Motorized Mode Multiplier (10%):", 5, {"1": "No Multiplier", "2": "Apply Multiplier (Mode 2)"}.values(), self.type_of_mode_var)
-        
-        # Calculate Button
-        self.calculate_btn = tk.Button(self.input_frame, text="Calculate", command=self._calculate_results, 
-                                       bg="#10b981", fg="white", font=("Arial", 12, "bold"), relief=tk.RAISED)
-        self.calculate_btn.grid(row=6, columnspan=2, sticky="ew", pady=15, padx=5)
-
-
-        # --- Output Frame (Yellow-100 equivalent) ---
-        self.output_frame = tk.Frame(self, padx=10, pady=10, bg="#fef9c3", bd=1, relief=tk.RIDGE)
-        self.output_frame.pack(fill=tk.X, pady=10)
-        
-        tk.Label(self.output_frame, text="Calculation Results", font=("Arial", 12, "bold"), bg="#fef9c3").grid(row=0, columnspan=2, pady=(0, 10))
-
-        # Result Labels
-        self.net_income_value = self._create_output(self.output_frame, "Net Income:", 1)
-        self.cpf_contribution_value = self._create_output(self.output_frame, "CPF Contribution:", 2)
-        self.pcts_amount_value = self._create_output(self.output_frame, "PCTS Amount:", 3)
-        self.wis_eligibility_value = self._create_output(self.output_frame, "WIS Eligibility:", 4)
-
-        self.input_frame.grid_columnconfigure(1, weight=1) # Make entry field expand
-
-    def _create_input(self, parent, label_text, row, options, var):
-        """Helper to create a label and OptionMenu/Entry."""
-        tk.Label(parent, text=label_text, anchor="w", bg=parent['bg']).grid(row=row, column=0, sticky="w", pady=5)
-        
-        if isinstance(options, list):
-            options = [str(o) for o in options]
+        function checkWisEligibility(netIncome) {
+            const MIN_INCOME_WIS = 500;
+            const MAX_INCOME_WIS = 3000;
             
-        dropdown = tk.OptionMenu(parent, var, *options)
-        dropdown.config(width=25)
-        dropdown.grid(row=row, column=1, sticky="ew", pady=5, padx=5)
-        return dropdown
+            if (netIncome >= MIN_INCOME_WIS && netIncome <= MAX_INCOME_WIS) {
+                return { text: "ELIGIBLE", color: "green-600" };
+            } else {
+                return { text: "NOT ELIGIBLE", color: "red-500" };
+            }
+        }
 
-    def _create_output(self, parent, label_text, row):
-        """Helper to create an output label pair."""
-        tk.Label(parent, text=label_text, anchor="w", bg=parent['bg']).grid(row=row, column=0, sticky="w", pady=5)
+        // --- UI Handling and Validation ---
+
+        function highlightError(elementId, isError) {
+            const element = document.getElementById(elementId);
+            if (isError) {
+                element.classList.add('input-error');
+                element.classList.add('border-red-500');
+            } else {
+                element.classList.remove('input-error');
+                element.classList.remove('border-red-500');
+            }
+        }
+
+        function calculate() {
+            let isValid = true;
+
+            // 1. Get Inputs
+            const year = parseInt(document.getElementById('year').value);
+            const earnIncomeInput = document.getElementById('earnIncome');
+            const yearOfBirthInput = document.getElementById('yearOfBirth');
+            const deductionTier = parseInt(document.getElementById('deductionTier').value);
+            const modeMultiplier = parseInt(document.getElementById('modeMultiplier').value);
+            
+            // 2. Validation
+            const earnIncome = parseFloat(earnIncomeInput.value);
+            const yearOfBirth = parseInt(yearOfBirthInput.value);
+            const currentYear = new Date().getFullYear();
+
+            if (isNaN(earnIncome) || earnIncome < 0) {
+                highlightError('earnIncome', true);
+                isValid = false;
+            } else {
+                highlightError('earnIncome', false);
+            }
+
+            if (isNaN(yearOfBirth) || yearOfBirth < 1900 || yearOfBirth > currentYear) {
+                highlightError('yearOfBirth', true);
+                isValid = false;
+            } else {
+                highlightError('yearOfBirth', false);
+            }
+
+            if (!isValid) {
+                document.getElementById('wisValue').textContent = "Input Error";
+                document.getElementById('wisValue').classList.value = 'text-right font-bold text-lg text-red-500';
+                return;
+            }
+
+            // 3. Perform Calculations
+            const netIncome = calculateNetIncome(year, earnIncome, deductionTier, modeMultiplier);
+            const age = calculateAge(yearOfBirth, year);
+            
+            const cpfRate = getCpfRate(year, age);
+            const cpfContribution = parseFloat((netIncome * cpfRate).toFixed(2));
+            
+            const pctsAmount = calculatePctsAmount(year, netIncome);
+            const wisEligibility = checkWisEligibility(netIncome);
+
+            // 4. Display Results
+            document.getElementById('netIncomeValue').textContent = `$ ${netIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('cpfValue').textContent = `$ ${cpfContribution.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('pctsValue').textContent = `$ ${pctsAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            
+            document.getElementById('wisValue').textContent = wisEligibility.text;
+            document.getElementById('wisValue').classList.value = `text-right font-bold text-lg text-${wisEligibility.color}`;
+        }
         
-        value_label = tk.Label(parent, text="--.--", anchor="e", font=("Arial", 10, "bold"), bg=parent['bg'], fg="#10b981")
-        value_label.grid(row=row, column=1, sticky="e", pady=5, padx=5)
-        return value_label
+        // Initial calculation or default display setup (optional)
+        document.addEventListener('DOMContentLoaded', () => {
+             // Set default year of birth to current year - 30 as a common age example
+             document.getElementById('yearOfBirth').value = new Date().getFullYear() - 30;
+             document.getElementById('earnIncome').value = 3000;
+             calculate();
+        });
 
-    def _validate_input(self, P, W):
-        """Validates if the input is a valid number (integer or float equivalent)."""
-        widget = self.nametowidget(W)
-        if P == "":
-            widget.config(bg='red', fg='white') # Highlight empty field
-            return True # Allow deletion
-        
-        try:
-            float(P)
-            widget.config(bg='white', fg='black') # Clear highlight on valid input
-            return True
-        except ValueError:
-            return False # Reject non-numeric input
-
-    def _clear_errors(self):
-        """Resets background and foreground colors for entry fields."""
-        self.earn_income_entry.config(bg='white', fg='black')
-        self.year_of_birth_entry.config(bg='white', fg='black')
-
-    def _calculate_results(self):
-        """Handles the calculation process when the button is clicked."""
-        self._clear_errors() # Always clear previous errors first
-        
-        try:
-            # 1. Input Validation and Conversion
-            year = int(self.year_var.get())
-            
-            try:
-                earn_income = float(self.earn_income_var.get())
-                if earn_income < 0: raise ValueError
-            except ValueError:
-                self.earn_income_entry.config(bg='red', fg='white')
-                messagebox.showerror("Input Error", "Please enter a valid, non-negative Monthly Earn Income.")
-                return
-
-            try:
-                year_of_birth = int(self.year_of_birth_var.get())
-                current_year = datetime.now().year
-                if not (1900 < year_of_birth <= current_year): raise ValueError
-            except ValueError:
-                self.year_of_birth_entry.config(bg='red', fg='white')
-                messagebox.showerror("Input Error", f"Please enter a valid Year of Birth (e.g., between 1900 and {current_year}).")
-                return
-            
-            # Extract deduction tier number from the dropdown string
-            # e.g., "Tier 3: Car/Van (Rate 60%)" -> 3
-            deduction_tier_str = self.deduction_tier_var.get()
-            deduction_tier = int(deduction_tier_str.split(':')[0].replace('Tier ', '').strip())
-            
-            # Type of mode (1 or 2) for multiplier check
-            type_of_mode_str = self.type_of_mode_var.get()
-            type_of_mode = int(type_of_mode_str.split(' ')[0].strip())
-
-
-            # 2. Calculation
-            calculator = IncomeCalculator(
-                year=year,
-                year_of_birth=year_of_birth,
-                earn_income=earn_income,
-                deduction_tier=deduction_tier,
-                type_of_mode=type_of_mode
-            )
-            
-            net_income, pcts_amount, cpf_contribution, wis_eligibility = calculator.get_results()
-
-            # 3. Display Results
-            self.net_income_value.config(text=f"$ {net_income:,.2f}", fg="#10b981")
-            self.pcts_amount_value.config(text=f"$ {pcts_amount:,.2f}", fg="#10b981")
-            self.cpf_contribution_value.config(text=f"$ {cpf_contribution:,.2f}", fg="#10b981")
-            
-            wis_color = "green" if wis_eligibility == 'eligible' else "red"
-            self.wis_eligibility_value.config(text=wis_eligibility.upper(), fg=wis_color)
-
-        except Exception as e:
-            messagebox.showerror("Fatal Error", f"An unexpected error occurred during calculation: {e}")
-            # Ensure all output labels show error state
-            self.net_income_value.config(text="Error", fg="red")
-            self.cpf_contribution_value.config(text="Error", fg="red")
-            self.pcts_amount_value.config(text="Error", fg="red")
-            self.wis_eligibility_value.config(text="Error", fg="red")
-            print(f"Calculation error: {e}")
-
-if __name__ == "__main__":
-    app = MenuApp()
-    app.mainloop()
+    </script>
+</body>
+</html>
 
