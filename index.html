@@ -196,6 +196,9 @@
             const yearOfBirth = parseInt(yearOfBirthInput.value);
             const currentYear = new Date().getFullYear();
 
+            // Calculate the maximum allowed birth year to ensure the worker is at least 18 in the calculation year
+            const maxAllowedBirthYear = year - 18; 
+
             if (isNaN(earnIncome) || earnIncome < 0) {
                 highlightError('earnIncome', true);
                 isValid = false;
@@ -203,7 +206,8 @@
                 highlightError('earnIncome', false);
             }
 
-            if (isNaN(yearOfBirth) || yearOfBirth < 1900 || yearOfBirth > currentYear) {
+            // Enhanced Year of Birth Validation
+            if (isNaN(yearOfBirth) || yearOfBirth < 1900 || yearOfBirth > currentYear || yearOfBirth > maxAllowedBirthYear) {
                 highlightError('yearOfBirth', true);
                 isValid = false;
             } else {
@@ -246,4 +250,5 @@
     </script>
 </body>
 </html>
+
 
