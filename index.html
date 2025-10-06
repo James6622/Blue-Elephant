@@ -1,4 +1,4 @@
-
+html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -72,9 +72,15 @@
                 </div>
             </div>
 
-            <button onclick="calculate()" class="w-full mt-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-[1.01]">
-                Calculate Financial Benefits
-            </button>
+            <!-- Calculation and Reset Buttons -->
+            <div class="flex space-x-4 mt-4">
+                <button onclick="calculate()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-[1.01]">
+                    Calculate Financial Benefits
+                </button>
+                <button onclick="resetForm()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-[1.01]">
+                    Reset
+                </button>
+            </div>
         </div>
 
         <!-- Result Section -->
@@ -181,6 +187,32 @@
             }
         }
 
+        function resetForm() {
+            // Clear input fields and reset dropdowns to defaults
+            document.getElementById('year').value = 2025;
+            document.getElementById('earnIncome').value = '';
+            document.getElementById('yearOfBirth').value = '';
+            document.getElementById('deductionTier').value = 3; 
+            document.getElementById('modeMultiplier').value = 1; 
+
+            // Clear error highlights
+            highlightError('earnIncome', false);
+            highlightError('yearOfBirth', false);
+            
+            // Reset result labels to initial empty state
+            document.getElementById('netIncomeValue').textContent = '$ 0.00';
+            document.getElementById('netIncomeValue').classList.value = 'text-right font-bold text-lg text-indigo-600';
+
+            document.getElementById('cpfValue').textContent = '$ 0.00';
+            document.getElementById('cpfValue').classList.value = 'text-right font-bold text-lg text-indigo-600';
+
+            document.getElementById('pctsValue').textContent = '$ 0.00';
+            document.getElementById('pctsValue').classList.value = 'text-right font-bold text-lg text-indigo-600';
+
+            document.getElementById('wisValue').textContent = '--';
+            document.getElementById('wisValue').classList.value = 'text-right font-bold text-lg text-gray-500';
+        }
+
         function calculate() {
             let isValid = true;
 
@@ -206,7 +238,7 @@
                 highlightError('earnIncome', false);
             }
 
-            // Enhanced Year of Birth Validation
+            // Enhanced Year of Birth Validation: Must be a valid year, not in the future, and older than 18.
             if (isNaN(yearOfBirth) || yearOfBirth < 1900 || yearOfBirth > currentYear || yearOfBirth > maxAllowedBirthYear) {
                 highlightError('yearOfBirth', true);
                 isValid = false;
@@ -239,16 +271,13 @@
             document.getElementById('wisValue').classList.value = `text-right font-bold text-lg text-${wisEligibility.color}`;
         }
         
-        // Initial calculation or default display setup (optional)
+        // Initial setup: start with empty inputs
         document.addEventListener('DOMContentLoaded', () => {
-             // Set default year of birth to current year - 30 as a common age example
-             document.getElementById('yearOfBirth').value = new Date().getFullYear() - 30;
-             document.getElementById('earnIncome').value = 3000;
-             calculate();
+             document.getElementById('yearOfBirth').value = '';
+             document.getElementById('earnIncome').value = '';
+             // No initial calculation is performed, leaving the output empty.
         });
 
     </script>
 </body>
 </html>
-
-
