@@ -24,10 +24,10 @@
             <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028)</p>
         </header>
 
-        <!-- 1. Disclaimer Section (FONT SIZE REDUCED) -->
+        <!-- 1. Disclaimer Section -->
         <div class="p-4 bg-yellow-100 text-yellow-800 text-xs border-b border-yellow-300">
             <p class="font-semibold mb-1">Disclaimer:</p>
-            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
+            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts. **OW Ceiling and Platform contribution rates are modeled based on current known phase-in schedules.**</p>
         </div>
 
         <!-- Input Section -->
@@ -50,7 +50,7 @@
                     <input type="number" id="earnIncome" placeholder="e.g., 2500" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 
-                <!-- 3. Worker's Age (CHANGED) -->
+                <!-- 3. Worker's Age -->
                 <div class="input-group">
                     <label for="age" class="text-gray-600 font-medium mb-1">Worker's Age (Must be 18+):</label>
                     <input type="number" id="age" placeholder="e.g., 30" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
@@ -93,16 +93,24 @@
             <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Calculation Results</h2>
 
             <div class="grid grid-cols-2 gap-y-3">
-                <span class="font-medium text-gray-600">Net Income:</span>
+                <span class="font-medium text-gray-600">Net Trade Income (NTI):</span>
                 <span id="netIncomeValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
 
-                <span class="font-medium text-gray-600">CPF Contribution (Employee Share):</span>
+                <!-- WORKER'S SHARE (GAP 1: Capped by OW Ceiling) -->
+                <span class="font-medium text-gray-600">CPF Contribution (Worker's Share):</span>
                 <span id="cpfValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
+                
+                <!-- PLATFORM'S SHARE (GAP 2: New Calculation) -->
+                <span class="font-medium text-gray-600">Platform's Mandatory CPF Contribution:</span>
+                <span id="sbCpfValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
+
+                <span class="font-medium text-gray-600">Total Mandatory CPF (Worker + Platform):</span>
+                <span id="totalCpfValue" class="text-right font-bold text-xl text-green-700">$ 0.00</span>
                 
                 <span class="font-medium text-gray-600">PCTS Amount:</span>
                 <span id="pctsValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
 
-                <span class="font-medium text-gray-600">WIS Eligibility:</span>
+                <span class="font-medium text-gray-600">WIS Eligibility (Income Check):</span>
                 <span id="wisValue" class="text-right font-bold text-lg text-gray-500">--</span>
             </div>
         </div>
@@ -112,6 +120,14 @@
         // --- Financial Constants ---
         const MIN_YEAR = 2025; 
         const MAX_YEAR = 2028; 
+
+        // 1. OW Ceiling (Capped NTI for CPF calculation purposes)
+        const OW_CEILINGS = {
+            2025: 6800, // Based on announced OW Ceiling schedule
+            2026: 6800,
+            2027: 6800,
+            2028: 6800
+        };
 
         const DEDUCTION_RATES = {
             2025: { 1: 0.20, 2: 0.35, 3: 0.60 },
@@ -127,11 +143,21 @@
             2028: 0.090 * 0.25
         };
 
+        // Simplified Worker's CPF Contribution Rates (Employee Share) based on age band
         const CPF_RATES = {
             2025: { '55_and_below': 0.135, 'above_55': 0.090 },
             2026: { '55_and_below': 0.155, 'above_55': 0.100 },
             2027: { '55_and_below': 0.180, 'above_55': 0.110 },
             2028: { '55_and_below': 0.200, 'above_55': 0.120 }
+        };
+
+        // 2. Platform/Service Buyer (SB) Contribution Rates on NTI
+        // These are phased-in mandatory contribution rates for the platform.
+        const SB_CPF_RATES_FLAT = {
+            2025: 0.015, // 1.5%
+            2026: 0.030, // 3.0%
+            2027: 0.045, // 4.5%
+            2028: 0.060  // 6.0%
         };
 
         // --- Core Calculation Logic ---
@@ -152,6 +178,7 @@
                 deductionRate *= 1.1;
             }
 
+            // Net Trade Income (NTI)
             const netIncome = earnIncome * (1 - deductionRate);
             return parseFloat(netIncome.toFixed(2));
         }
@@ -170,9 +197,10 @@
             const MAX_INCOME_WIS = 3000;
             
             if (netIncome >= MIN_INCOME_WIS && netIncome <= MAX_INCOME_WIS) {
-                return { text: "ELIGIBLE", color: "green-600" };
+                // Note: This only checks income range, not full criteria
+                return { text: "ELIGIBLE (Income Check Passed)", color: "green-600" };
             } else {
-                return { text: "NOT ELIGIBLE", color: "red-500" };
+                return { text: "NOT ELIGIBLE (Income Range)", color: "red-500" };
             }
         }
 
@@ -194,7 +222,6 @@
             const multiplierSelect = document.getElementById('modeMultiplier');
             const multiplierNote = document.getElementById('multiplierNote');
             
-            // Tier 3 (value '3') typically does not use the multiplier
             if (tierSelect.value === '3') {
                 multiplierSelect.value = '1'; // Force "No Multiplier"
                 multiplierSelect.disabled = true;
@@ -208,13 +235,12 @@
         }
 
         function resetForm() {
-            // Get the current year and set default within the available data range
             const currentSystemYear = new Date().getFullYear();
             const defaultYear = Math.max(MIN_YEAR, Math.min(MAX_YEAR, currentSystemYear));
 
             document.getElementById('year').value = defaultYear;
             document.getElementById('earnIncome').value = '';
-            document.getElementById('age').value = ''; // Reset age input
+            document.getElementById('age').value = ''; 
             document.getElementById('deductionTier').value = 3; 
             
             handleTierChange();
@@ -223,16 +249,13 @@
             highlightError('earnIncome', false);
             highlightError('age', false);
             
-            // Reset result labels to initial empty state
+            // Reset result labels
             document.getElementById('netIncomeValue').textContent = '$ 0.00';
-            document.getElementById('netIncomeValue').classList.value = 'text-right font-bold text-lg text-indigo-600';
-
             document.getElementById('cpfValue').textContent = '$ 0.00';
-            document.getElementById('cpfValue').classList.value = 'text-right font-bold text-lg text-indigo-600';
-
+            document.getElementById('sbCpfValue').textContent = '$ 0.00'; // Reset platform share
+            document.getElementById('totalCpfValue').textContent = '$ 0.00'; // Reset total CPF
             document.getElementById('pctsValue').textContent = '$ 0.00';
-            document.getElementById('pctsValue').classList.value = 'text-right font-bold text-lg text-indigo-600';
-
+            
             document.getElementById('wisValue').textContent = '--';
             document.getElementById('wisValue').classList.value = 'text-right font-bold text-lg text-gray-500';
         }
@@ -243,13 +266,13 @@
             // 1. Get Inputs
             const year = parseInt(document.getElementById('year').value);
             const earnIncomeInput = document.getElementById('earnIncome');
-            const ageInput = document.getElementById('age'); // NEW ID
+            const ageInput = document.getElementById('age'); 
             const deductionTier = parseInt(document.getElementById('deductionTier').value);
             const modeMultiplier = parseInt(document.getElementById('modeMultiplier').value); 
             
             // 2. Validation
             const earnIncome = parseFloat(earnIncomeInput.value);
-            const age = parseInt(ageInput.value); // Read age directly
+            const age = parseInt(ageInput.value); 
 
             if (isNaN(earnIncome) || earnIncome <= 0) {
                 highlightError('earnIncome', true);
@@ -258,8 +281,7 @@
                 highlightError('earnIncome', false);
             }
 
-            // Age Validation: Must be a valid number, non-negative, and at least 18
-            if (isNaN(age) || age < 18 || age > 100) { // Using 100 as a reasonable upper bound
+            if (isNaN(age) || age < 18 || age > 100) { 
                 highlightError('age', true);
                 isValid = false;
             } else {
@@ -272,16 +294,29 @@
                 // Reset other values on error
                 document.getElementById('netIncomeValue').textContent = '$ 0.00';
                 document.getElementById('cpfValue').textContent = '$ 0.00';
+                document.getElementById('sbCpfValue').textContent = '$ 0.00'; 
+                document.getElementById('totalCpfValue').textContent = '$ 0.00';
                 document.getElementById('pctsValue').textContent = '$ 0.00';
                 return;
             }
 
             // 3. Perform Calculations
             const netIncome = calculateNetIncome(year, earnIncome, deductionTier, modeMultiplier);
-            // Age is used directly in getCpfRate(year, age)
             
+            // --- GAP 1 Fix: Apply OW Ceiling ---
+            const owCeiling = OW_CEILINGS[year] || 6800;
+            // The amount of NTI that is subjected to CPF contribution
+            const cpfCalculableIncome = Math.min(netIncome, owCeiling); 
+
+            // Calculate Worker's Share
             const cpfRate = getCpfRate(year, age);
-            const cpfContribution = parseFloat((netIncome * cpfRate).toFixed(2));
+            const cpfContribution = parseFloat((cpfCalculableIncome * cpfRate).toFixed(2));
+            
+            // --- GAP 2 Fix: Calculate Service Buyer's Share ---
+            const sbCpfRate = SB_CPF_RATES_FLAT[year] || 0; 
+            const sbContribution = parseFloat((cpfCalculableIncome * sbCpfRate).toFixed(2));
+
+            const totalCpf = parseFloat((cpfContribution + sbContribution).toFixed(2));
             
             const pctsAmount = calculatePctsAmount(year, netIncome);
             const wisEligibility = checkWisEligibility(netIncome);
@@ -289,6 +324,8 @@
             // 4. Display Results
             document.getElementById('netIncomeValue').textContent = `$ ${netIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
             document.getElementById('cpfValue').textContent = `$ ${cpfContribution.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('sbCpfValue').textContent = `$ ${sbContribution.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('totalCpfValue').textContent = `$ ${totalCpf.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
             document.getElementById('pctsValue').textContent = `$ ${pctsAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
             
             document.getElementById('wisValue').textContent = wisEligibility.text;
@@ -300,12 +337,9 @@
             const yearSelect = document.getElementById('year');
             const currentSystemYear = new Date().getFullYear();
             
-            // Determine the default selected year (must be current or future, and within the data range)
             const defaultYear = Math.max(MIN_YEAR, Math.min(MAX_YEAR, currentSystemYear));
             
-            // Only allow selection of the current year and future years up to MAX_YEAR
             for (let y = currentSystemYear; y <= MAX_YEAR; y++) {
-                // Skip years outside the available data range
                 if (y < MIN_YEAR) continue; 
 
                 const option = document.createElement('option');
@@ -317,7 +351,6 @@
                 yearSelect.appendChild(option);
             }
 
-            // If the current year is beyond MAX_YEAR, set the last available year as default and disable selection
             if (currentSystemYear > MAX_YEAR) {
                 const option = document.createElement('option');
                 option.value = MAX_YEAR;
@@ -331,7 +364,7 @@
         // Initial setup
         document.addEventListener('DOMContentLoaded', () => {
              populateYearDropdown();
-             resetForm(); // Ensure all fields are cleared and defaults are applied
+             resetForm(); 
         });
 
     </script>
