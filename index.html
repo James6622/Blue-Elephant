@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -24,20 +24,23 @@
             <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028)</p>
         </header>
 
+        <!-- 1. Disclaimer Section -->
+        <div class="p-4 bg-yellow-100 text-yellow-800 text-sm border-b border-yellow-300">
+            <p class="font-semibold mb-1">Disclaimer:</p>
+            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
+        </div>
+
         <!-- Input Section -->
         <div id="input-frame" class="p-6 space-y-4 bg-blue-50">
             <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Input Parameters</h2>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 
-                <!-- 1. Year Selection -->
+                <!-- 1. Year Selection (Now Dynamically Populated) -->
                 <div class="input-group">
-                    <label for="year" class="text-gray-600 font-medium mb-1">Calculation Year:</label>
+                    <label for="year" class="text-gray-600 font-medium mb-1">Calculation Year (Current/Future):</label>
                     <select id="year" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="2025">2025</option>
-                        <option value="2026">2026</option>
-                        <option value="2027">2027</option>
-                        <option value="2028">2028</option>
+                        <!-- Options populated by JavaScript -->
                     </select>
                 </div>
 
@@ -107,6 +110,10 @@
 
     <script>
         // --- Financial Constants (Equivalent to Python Class) ---
+        // Define the minimum and maximum year for which rate data is available
+        const MIN_YEAR = 2025; 
+        const MAX_YEAR = 2028; 
+
         const DEDUCTION_RATES = {
             2025: { 1: 0.20, 2: 0.35, 3: 0.60 },
             2026: { 1: 0.20, 2: 0.35, 3: 0.60 },
@@ -148,7 +155,6 @@
             let deductionRate = DEDUCTION_RATES[year]?.[deductionTier] || 0;
 
             // Apply 10% multiplier ONLY if it is manually selected (value 2)
-            // Note: handleTierChange() will ensure it is set to 1 for Tier 3
             if (modeMultiplier === 2) {
                 deductionRate *= 1.1;
             }
@@ -190,7 +196,7 @@
             }
         }
 
-        // NEW: Handles enabling/disabling the Multiplier based on Tier selection
+        // Handles enabling/disabling the Multiplier based on Tier selection
         function handleTierChange() {
             const tierSelect = document.getElementById('deductionTier');
             const multiplierSelect = document.getElementById('modeMultiplier');
@@ -211,7 +217,10 @@
 
         function resetForm() {
             // Clear input fields and reset dropdowns to defaults
-            document.getElementById('year').value = 2025;
+            const currentYear = new Date().getFullYear();
+            const defaultYear = Math.max(MIN_YEAR, Math.min(MAX_YEAR, currentYear));
+
+            document.getElementById('year').value = defaultYear;
             document.getElementById('earnIncome').value = '';
             document.getElementById('yearOfBirth').value = '';
             document.getElementById('deductionTier').value = 3; 
@@ -245,26 +254,26 @@
             const earnIncomeInput = document.getElementById('earnIncome');
             const yearOfBirthInput = document.getElementById('yearOfBirth');
             const deductionTier = parseInt(document.getElementById('deductionTier').value);
-            // Read value, note: if disabled, it will be '1' due to handleTierChange()
+            // Read value. Note: if disabled, it will be '1' due to handleTierChange()
             const modeMultiplier = parseInt(document.getElementById('modeMultiplier').value); 
             
             // 2. Validation
             const earnIncome = parseFloat(earnIncomeInput.value);
             const yearOfBirth = parseInt(yearOfBirthInput.value);
-            const currentYear = new Date().getFullYear();
+            const currentSystemYear = new Date().getFullYear();
 
             // Calculate the maximum allowed birth year to ensure the worker is at least 18 in the calculation year
             const maxAllowedBirthYear = year - 18; 
 
-            if (isNaN(earnIncome) || earnIncome < 0) {
+            if (isNaN(earnIncome) || earnIncome <= 0) {
                 highlightError('earnIncome', true);
                 isValid = false;
             } else {
                 highlightError('earnIncome', false);
             }
 
-            // Enhanced Year of Birth Validation: Must be a valid year, not in the future, and older than 18.
-            if (isNaN(yearOfBirth) || yearOfBirth < 1900 || yearOfBirth > currentYear || yearOfBirth > maxAllowedBirthYear) {
+            // Enhanced Year of Birth Validation: Must be a valid year, not in the future, and older than 18 in the selected year.
+            if (isNaN(yearOfBirth) || yearOfBirth < 1900 || yearOfBirth > currentSystemYear || yearOfBirth > maxAllowedBirthYear) {
                 highlightError('yearOfBirth', true);
                 isValid = false;
             } else {
@@ -274,6 +283,10 @@
             if (!isValid) {
                 document.getElementById('wisValue').textContent = "Input Error";
                 document.getElementById('wisValue').classList.value = 'text-right font-bold text-lg text-red-500';
+                // Reset other values on error
+                document.getElementById('netIncomeValue').textContent = '$ 0.00';
+                document.getElementById('cpfValue').textContent = '$ 0.00';
+                document.getElementById('pctsValue').textContent = '$ 0.00';
                 return;
             }
 
@@ -296,15 +309,32 @@
             document.getElementById('wisValue').classList.value = `text-right font-bold text-lg text-${wisEligibility.color}`;
         }
         
-        // Initial setup: start with empty inputs and ensure the initial state of the multiplier is correct
+        // Function to dynamically populate the year dropdown
+        function populateYearDropdown() {
+            const yearSelect = document.getElementById('year');
+            const currentSystemYear = new Date().getFullYear();
+            
+            // Determine the default selected year (should be current year, but must be within the data range)
+            const defaultYear = Math.max(MIN_YEAR, Math.min(MAX_YEAR, currentSystemYear));
+
+            for (let y = MIN_YEAR; y <= MAX_YEAR; y++) {
+                const option = document.createElement('option');
+                option.value = y;
+                option.textContent = y;
+                if (y === defaultYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+        }
+
+        // Initial setup: start with empty inputs and correct dropdown options
         document.addEventListener('DOMContentLoaded', () => {
-             document.getElementById('yearOfBirth').value = '';
-             document.getElementById('earnIncome').value = '';
-             
-             // Ensure the multiplier is disabled by default since Tier 3 is selected by default in the HTML
-             handleTierChange(); 
+             populateYearDropdown();
+             resetForm(); // Reset ensures all fields are cleared and defaults are applied
         });
 
     </script>
 </body>
 </html>
+
