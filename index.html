@@ -34,8 +34,8 @@
         <div id="input-frame" class="p-6 space-y-4 bg-blue-50">
             <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Input Parameters</h2>
             
-            <!-- Grid Layout for side-by-side inputs (sm:grid-cols-2) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Grid Layout modified to use 'grid-cols-2' on ALL screen sizes -->
+            <div class="grid grid-cols-2 gap-4">
                 
                 <!-- 1. Year Selection (Paired with Income) -->
                 <div class="input-group">
@@ -68,7 +68,7 @@
                 </div>
 
                 <!-- 5. Motorized Mode Multiplier Check (Spans both columns) -->
-                <div class="input-group sm:col-span-2">
+                <div class="input-group col-span-2">
                     <label for="modeMultiplier" class="text-gray-600 font-medium mb-1">Mode Multiplier Check (Type 2, +10% Deduction):</label>
                     <select id="modeMultiplier" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-disabled" disabled>
                         <option value="1" selected>1: No Multiplier Applied</option>
