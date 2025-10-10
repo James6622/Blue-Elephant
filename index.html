@@ -27,7 +27,7 @@
         <!-- 1. Disclaimer Section -->
         <div class="p-4 bg-yellow-100 text-yellow-800 text-xs border-b border-yellow-300">
             <p class="font-semibold mb-1">Disclaimer:</p>
-            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts. **</p>
+            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
         </div>
 
         <!-- Input Section -->
@@ -96,11 +96,11 @@
                 <span class="font-medium text-gray-600">Net Trade Income (NTI):</span>
                 <span id="netIncomeValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
 
-                <!-- WORKER'S SHARE (GAP 1: Capped by OW Ceiling) -->
+                <!-- WORKER'S SHARE (Capped by OW Ceiling) -->
                 <span class="font-medium text-gray-600">CPF Contribution (Worker's Share):</span>
                 <span id="cpfValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
                 
-                <!-- PLATFORM'S SHARE (GAP 2: New Calculation) -->
+                <!-- PLATFORM'S SHARE -->
                 <span class="font-medium text-gray-600">Platform's Mandatory CPF Contribution:</span>
                 <span id="sbCpfValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
 
@@ -122,11 +122,12 @@
         const MAX_YEAR = 2028; 
 
         // 1. OW Ceiling (Capped NTI for CPF calculation purposes)
+        // **CRITICAL FIX:** Updated to reflect the progressive legislated OW ceiling increase.
         const OW_CEILINGS = {
-            2025: 6800, // Based on announced OW Ceiling schedule
-            2026: 6800,
-            2027: 6800,
-            2028: 6800
+            2025: 6800, 
+            2026: 7400, // Corrected from 6800
+            2027: 8000, // Corrected from 6800
+            2028: 8800  // Corrected from 6800
         };
 
         const DEDUCTION_RATES = {
@@ -152,7 +153,6 @@
         };
 
         // 2. Platform/Service Buyer (SB) Contribution Rates on NTI
-        // These are phased-in mandatory contribution rates for the platform.
         const SB_CPF_RATES_FLAT = {
             2025: 0.015, // 1.5%
             2026: 0.030, // 3.0%
@@ -252,8 +252,8 @@
             // Reset result labels
             document.getElementById('netIncomeValue').textContent = '$ 0.00';
             document.getElementById('cpfValue').textContent = '$ 0.00';
-            document.getElementById('sbCpfValue').textContent = '$ 0.00'; // Reset platform share
-            document.getElementById('totalCpfValue').textContent = '$ 0.00'; // Reset total CPF
+            document.getElementById('sbCpfValue').textContent = '$ 0.00'; 
+            document.getElementById('totalCpfValue').textContent = '$ 0.00';
             document.getElementById('pctsValue').textContent = '$ 0.00';
             
             document.getElementById('wisValue').textContent = '--';
@@ -303,16 +303,16 @@
             // 3. Perform Calculations
             const netIncome = calculateNetIncome(year, earnIncome, deductionTier, modeMultiplier);
             
-            // --- GAP 1 Fix: Apply OW Ceiling ---
-            const owCeiling = OW_CEILINGS[year] || 6800;
-            // The amount of NTI that is subjected to CPF contribution
+            // Apply OW Ceiling (Capped NTI for CPF calculation purposes)
+            // **CRITICAL FIX IN ACTION:** Uses the correct progressive ceiling for the selected year.
+            const owCeiling = OW_CEILINGS[year] || 6800; 
             const cpfCalculableIncome = Math.min(netIncome, owCeiling); 
 
             // Calculate Worker's Share
             const cpfRate = getCpfRate(year, age);
             const cpfContribution = parseFloat((cpfCalculableIncome * cpfRate).toFixed(2));
             
-            // --- GAP 2 Fix: Calculate Service Buyer's Share ---
+            // Calculate Service Buyer's Share
             const sbCpfRate = SB_CPF_RATES_FLAT[year] || 0; 
             const sbContribution = parseFloat((cpfCalculableIncome * sbCpfRate).toFixed(2));
 
@@ -370,4 +370,3 @@
     </script>
 </body>
 </html>
-
