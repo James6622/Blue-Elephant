@@ -9,7 +9,17 @@
     <style>
         /* Custom styles for professional look and feel */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        
+        /* FIX: Ensure the page content can scroll vertically */
+        html, body {
+            min-height: 100vh;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f3f4f6; 
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+        
         .input-group { display: flex; flex-direction: column; }
         .input-field { transition: border-color 0.2s, box-shadow 0.2s; }
         .input-error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4); }
@@ -39,9 +49,9 @@
                 
                 <!-- 1. Year Selection (Paired with Income) -->
                 <div class="input-group">
-                    <label for="year" class="text-gray-600 font-medium mb-1">Calculation Year (Current/Future):</label>
+                    <label for="year" class="text-gray-600 font-medium mb-1">Calculation Year (2025 - 2028):</label>
                     <select id="year" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                        <!-- Options populated by JavaScript -->
+                        <!-- Options populated by JavaScript (2025-2028 only) -->
                     </select>
                 </div>
 
@@ -130,14 +140,14 @@
             2027: 8000, 
             2028: 8800  
         };
-
-        const DEDUCTION_RATES = {
-            2025: { 1: 0.20, 2: 0.35, 3: 0.60 },
-            2026: { 1: 0.20, 2: 0.35, 3: 0.60 },
-            2027: { 1: 0.20, 2: 0.35, 3: 0.60 },
-            2028: { 1: 0.20, 2: 0.35, 3: 0.60 }
+        
+        // Deduction rates are static (not year-dependent)
+        const DEDUCTION_TIERS = {
+            1: 0.20, // Low (Foot, Public Transport)
+            2: 0.35, // Medium (PMD/PAB/Motorcycle)
+            3: 0.60  // High (Car/Van)
         };
-
+        
         const PCTS_RATES = {
             2025: 0.025,
             2026: 0.050 * 0.75,
@@ -166,6 +176,7 @@
         function getCpfRate(year, age) {
             const yearRates = CPF_RATES[year] || {};
             if (age <= 55) {
+                // If a specific rate is not found for the year/age band, default to 0
                 return yearRates['55_and_below'] || 0;
             } else {
                 return yearRates['above_55'] || 0;
@@ -173,19 +184,21 @@
         }
 
         function calculateNetIncome(year, earnIncome, deductionTier, modeMultiplier) {
-            let deductionRate = DEDUCTION_RATES[year]?.[deductionTier] || 0;
+            let deductionRate = DEDUCTION_TIERS[deductionTier] || 0;
 
+            // Multiplier logic: Applies 10% increase to the base deduction rate for Tier 2 only
             if (modeMultiplier === 2) {
                 deductionRate *= 1.1;
             }
 
-            // Net Trade Income (NTI)
+            // Net Trade Income (NTI) = Earn Income * (1 - Deduction Rate)
             const netIncome = earnIncome * (1 - deductionRate);
             return parseFloat(netIncome.toFixed(2));
         }
 
         function calculatePctsAmount(year, netIncome) {
             const PCTS_THRESHOLD = 3000;
+            // PCTS applies only if NTI is below S$3,000
             if (netIncome >= PCTS_THRESHOLD) {
                 return 0;
             }
@@ -197,8 +210,8 @@
             const MIN_INCOME_WIS = 500;
             const MAX_INCOME_WIS = 3000;
             
+            // WIS eligibility check is based on income range only for this calculator
             if (netIncome >= MIN_INCOME_WIS && netIncome <= MAX_INCOME_WIS) {
-                // Note: This only checks income range, not full criteria
                 return { text: "ELIGIBLE (Income Check Passed)", color: "green-600" };
             } else {
                 return { text: "NOT ELIGIBLE (Income Range)", color: "red-500" };
@@ -224,29 +237,27 @@
             const multiplierNote = document.getElementById('multiplierNote');
             const selectedTier = tierSelect.value;
             
-            // Check if Tier 1 (Low) or Tier 3 (High) is selected, as the multiplier only applies to Tier 2
-            if (selectedTier === '1' || selectedTier === '3') {
+            // Only Tier 2 can use the multiplier
+            if (selectedTier === '2') {
+                multiplierSelect.disabled = false;
+                multiplierSelect.classList.remove('bg-disabled');
+                multiplierNote.textContent = 'Apply 10% multiplier if using motorized PMD/PAB/Motorcycle (Tier 2).';
+            } else { 
                 multiplierSelect.value = '1'; // Force "No Multiplier"
                 multiplierSelect.disabled = true;
                 multiplierSelect.classList.add('bg-disabled');
                 
-                let note = '';
-                if (selectedTier === '1') {
-                    note = 'Multiplier is disabled for Tier 1 (Non-motorized/Public Transport).';
-                } else {
-                    note = 'Multiplier is disabled for Tier 3 (Car/Van).';
-                }
+                let note = (selectedTier === '1') 
+                    ? 'Multiplier is disabled for Tier 1 (Non-motorized/Public Transport).'
+                    : 'Multiplier is disabled for Tier 3 (Car/Van).';
                 multiplierNote.textContent = note;
-                
-            } else { // Tier 2 is selected (where the multiplier is relevant)
-                multiplierSelect.disabled = false;
-                multiplierSelect.classList.remove('bg-disabled');
-                multiplierNote.textContent = 'Apply 10% multiplier if using motorized PMD/PAB/Motorcycle (Tier 2).';
             }
         }
 
         function resetForm() {
             const currentSystemYear = new Date().getFullYear();
+            
+            // Default selected year: The earliest of the current year or MAX_YEAR, clamped to MIN_YEAR
             const defaultYear = Math.max(MIN_YEAR, Math.min(MAX_YEAR, currentSystemYear));
 
             document.getElementById('year').value = defaultYear;
@@ -315,7 +326,7 @@
             const netIncome = calculateNetIncome(year, earnIncome, deductionTier, modeMultiplier);
             
             // Apply OW Ceiling (Capped NTI for CPF calculation purposes)
-            const owCeiling = OW_CEILINGS[year] || 6800; 
+            const owCeiling = OW_CEILINGS[year] || 0; 
             const cpfCalculableIncome = Math.min(netIncome, owCeiling); 
 
             // Calculate Worker's Share
@@ -347,11 +358,11 @@
             const yearSelect = document.getElementById('year');
             const currentSystemYear = new Date().getFullYear();
             
+            // Calculate the year to be selected by default (must be within MIN_YEAR and MAX_YEAR)
             const defaultYear = Math.max(MIN_YEAR, Math.min(MAX_YEAR, currentSystemYear));
             
-            for (let y = currentSystemYear; y <= MAX_YEAR; y++) {
-                if (y < MIN_YEAR) continue; 
-
+            // Loop only through the defined years (2025 to 2028)
+            for (let y = MIN_YEAR; y <= MAX_YEAR; y++) {
                 const option = document.createElement('option');
                 option.value = y;
                 option.textContent = y;
@@ -359,15 +370,6 @@
                     option.selected = true;
                 }
                 yearSelect.appendChild(option);
-            }
-
-            if (currentSystemYear > MAX_YEAR) {
-                const option = document.createElement('option');
-                option.value = MAX_YEAR;
-                option.textContent = `${MAX_YEAR} (Latest Available Data)`;
-                option.selected = true;
-                yearSelect.appendChild(option);
-                yearSelect.disabled = true;
             }
         }
 
