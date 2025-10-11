@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -74,7 +74,7 @@
                         <option value="1" selected>1: No Multiplier Applied</option>
                         <option value="2">2: Apply 10% Multiplier (If using motorized PMD/PAB/Motorcycle)</option>
                     </select>
-                    <p id="multiplierNote" class="text-xs text-gray-500 mt-1">Multiplier is automatically disabled for Tier 3.</p>
+                    <p id="multiplierNote" class="text-xs text-gray-500 mt-1">Multiplier is disabled for Tier 3 (Car/Van).</p>
                 </div>
             </div>
 
@@ -222,13 +222,23 @@
             const tierSelect = document.getElementById('deductionTier');
             const multiplierSelect = document.getElementById('modeMultiplier');
             const multiplierNote = document.getElementById('multiplierNote');
+            const selectedTier = tierSelect.value;
             
-            if (tierSelect.value === '3') {
+            // Check if Tier 1 (Low) or Tier 3 (High) is selected, as the multiplier only applies to Tier 2
+            if (selectedTier === '1' || selectedTier === '3') {
                 multiplierSelect.value = '1'; // Force "No Multiplier"
                 multiplierSelect.disabled = true;
                 multiplierSelect.classList.add('bg-disabled');
-                multiplierNote.textContent = 'Multiplier is automatically disabled for Tier 3.';
-            } else {
+                
+                let note = '';
+                if (selectedTier === '1') {
+                    note = 'Multiplier is disabled for Tier 1 (Non-motorized/Public Transport).';
+                } else {
+                    note = 'Multiplier is disabled for Tier 3 (Car/Van).';
+                }
+                multiplierNote.textContent = note;
+                
+            } else { // Tier 2 is selected (where the multiplier is relevant)
                 multiplierSelect.disabled = false;
                 multiplierSelect.classList.remove('bg-disabled');
                 multiplierNote.textContent = 'Apply 10% multiplier if using motorized PMD/PAB/Motorcycle (Tier 2).';
