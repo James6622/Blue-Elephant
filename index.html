@@ -1,99 +1,142 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Platform Worker Financial Calculator (SG)</title>
+
+    <title>Platform Worker Financial Calculator (SG) V2.4</title>
+
     <!-- Load Tailwind CSS -->
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
+
         /* Custom styles for professional look and feel */
+
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
         
-        /* FIX: Ensure the page content can scroll vertically */
+
         html, body {
+
             min-height: 100vh;
+
         }
+
         body { 
-            font-family: 'Inter', sans-serif; 
+
+            font-family: 'Inter', sans-serif;
+
             background-color: #f3f4f6; 
-            overflow-y: auto; /* Enable vertical scrolling */
+
+            overflow-y: auto; 
+
         }
+
         
+
         .input-group { display: flex; flex-direction: column; }
+
         .input-field { transition: border-color 0.2s, box-shadow 0.2s; }
-        .input-error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4); }
+
+        /* Defined error style for consistent highlighting */
+
+        .input-error { 
+
+            border-color: #ef4444 !important;
+
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4); 
+
+        }
+
         .bg-disabled { background-color: #e5e7eb !important; } /* Tailwind gray-200 */
+
     </style>
+
 </head>
+
 <body class="p-4 sm:p-8 flex justify-center">
 
-    <div id="app-container" class="w-full max-w-xl bg-white rounded-xl shadow-2xl overflow-hidden">
+    <div id="app-container"
+        class="w-full max-w-xl bg-white rounded-xl shadow-2xl overflow-hidden">
+
         <header class="bg-indigo-700 text-white p-6 text-center">
+
             <h1 class="text-2xl font-bold">Singapore Platform Worker Calculator</h1>
-            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028)</p>
+
+            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.4</p>
+
         </header>
 
-        <!-- 1. Disclaimer Section -->
+        <!-- 1. Disclaimer Section - RESTORED ORIGINAL TEXT -->
+
         <div class="p-4 bg-yellow-100 text-yellow-800 text-xs border-b border-yellow-300">
+
             <p class="font-semibold mb-1">Disclaimer:</p>
+
             <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
+
         </div>
 
         <!-- Input Section -->
+
         <div id="input-frame" class="p-6 space-y-4 bg-blue-50">
+
             <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Input Parameters</h2>
-            
-            <!-- Grid Layout for side-by-side inputs (sm:grid-cols-2) -->
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                <!-- 1. Year Selection (Paired with Income) -->
+
+                <!-- 1. Year Selection -->
                 <div class="input-group">
                     <label for="year" class="text-gray-600 font-medium mb-1">Calculation Year (2025 - 2028):</label>
-                    <select id="year" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                        <!-- Options populated by JavaScript (2025-2028 only) -->
+                    <select id="year"
+                        class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <!-- Options populated by JavaScript -->
                     </select>
                 </div>
 
-                <!-- 2. Monthly Earn Income (Paired with Year) -->
+                <!-- 2. Monthly Earn Income -->
                 <div class="input-group">
                     <label for="earnIncome" class="text-gray-600 font-medium mb-1">Monthly Earn Income (S$):</label>
-                    <input type="number" id="earnIncome" placeholder="e.g., 2500" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="number" id="earnIncome" placeholder="e.g., 2500"
+                        class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
-                
-                <!-- 3. Worker's Age (Paired with Tier) -->
+
+                <!-- 3. Worker's Age -->
                 <div class="input-group">
                     <label for="age" class="text-gray-600 font-medium mb-1">Worker's Age (Must be 18+):</label>
-                    <input type="number" id="age" placeholder="e.g., 30" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="number" id="age" placeholder="e.g., 30"
+                        class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
-                
-                <!-- 4. Deduction Tier (Paired with Age) -->
+
+                <!-- 4. Deduction Tier -->
                 <div class="input-group">
                     <label for="deductionTier" class="text-gray-600 font-medium mb-1">Fixed Expense Deduction Tier:</label>
-                    <select id="deductionTier" onchange="handleTierChange()" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <select id="deductionTier" 
+                        class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <!-- Note: Tier 2 rate now includes the implicit +10% multiplier (35% -> 45%) -->
                         <option value="1">1: Low (Foot, Public Transport) - 20%</option>
-                        <option value="2">2: Medium (PMD/PAB/Motorcycle) - 35%</option>
+                        <option value="2">2: Medium (PMD/PAB/Motorcycle) - 45% (Includes motorized transport deduction)</option>
                         <option value="3" selected>3: High (Car/Van) - 60%</option>
                     </select>
                 </div>
 
-                <!-- 5. Motorized Mode Multiplier Check (Spans both columns) -->
-                <div class="input-group sm:col-span-2">
-                    <label for="modeMultiplier" class="text-gray-600 font-medium mb-1">Mode Multiplier Check (Type 2, +10% Deduction):</label>
-                    <select id="modeMultiplier" class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-disabled" disabled>
-                        <option value="1" selected>1: No Multiplier Applied</option>
-                        <option value="2">2: Apply 10% Multiplier (If using motorized PMD/PAB/Motorcycle)</option>
-                    </select>
-                    <p id="multiplierNote" class="text-xs text-gray-500 mt-1">Multiplier is disabled for Tier 3 (Car/Van).</p>
-                </div>
+                <!-- The Mode Multiplier selection (Input 5) has been removed -->
             </div>
 
-            <!-- Calculation and Reset Buttons (Side-by-side layout confirmed) -->
-            <div class="flex space-x-4 mt-4">
-                <button onclick="calculate()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-[1.01]">
+            <!-- Calculation and Reset Buttons -->
+            <div class="flex space-x-4 pt-4">
+                <button onclick="calculate()"
+                    class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-[1.01]">
                     Calculate Financial Benefits
                 </button>
-                <button onclick="resetForm()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-[1.01]">
+                <button onclick="resetForm()"
+                    class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-[1.01]">
                     Reset
                 </button>
             </div>
@@ -101,6 +144,7 @@
 
         <!-- Result Section -->
         <div id="output-frame" class="p-6 space-y-3 bg-yellow-50">
+
             <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Calculation Results</h2>
 
             <div class="grid grid-cols-2 gap-y-3">
@@ -110,14 +154,14 @@
                 <!-- WORKER'S SHARE (Capped by OW Ceiling) -->
                 <span class="font-medium text-gray-600">CPF Contribution (Worker's Share):</span>
                 <span id="cpfValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
-                
+
                 <!-- PLATFORM'S SHARE -->
                 <span class="font-medium text-gray-600">Platform's Mandatory CPF Contribution:</span>
                 <span id="sbCpfValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
 
                 <span class="font-medium text-gray-600">Total Mandatory CPF (Worker + Platform):</span>
                 <span id="totalCpfValue" class="text-right font-bold text-xl text-green-700">$ 0.00</span>
-                
+
                 <span class="font-medium text-gray-600">PCTS Amount:</span>
                 <span id="pctsValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
 
@@ -132,25 +176,26 @@
         const MIN_YEAR = 2025; 
         const MAX_YEAR = 2028; 
 
-        // 1. OW Ceiling (Capped NTI for CPF calculation purposes)
-        // Corrected to reflect the progressive legislated OW ceiling increase.
+        // OW Ceiling (Capped NTI for CPF calculation purposes)
         const OW_CEILINGS = {
             2025: 6800, 
             2026: 7400, 
             2027: 8000, 
-            2028: 8800  
+            2028: 8800
         };
         
-        // Deduction rates are static (not year-dependent)
+        // Deduction rates. Note: Tier 2 is now 0.45 (35% base + 10% motorized multiplier, since the selection option was removed and we assume the highest possible deduction for Tier 2).
         const DEDUCTION_TIERS = {
             1: 0.20, // Low (Foot, Public Transport)
-            2: 0.35, // Medium (PMD/PAB/Motorcycle)
-            3: 0.60  // High (Car/Van)
+            2: 0.45, // Medium (PMD/PAB/Motorcycle) - **UPDATED: 35% + 10% = 45%**
+            3: 0.60  // High (Car/Van)
         };
         
+        // Platform Contributory Threshold Scheme (PCTS) rates
         const PCTS_RATES = {
+            // Rates are applied on NTI < $3,000, then PCTS support tapers off.
             2025: 0.025,
-            2026: 0.050 * 0.75,
+            2026: 0.050 * 0.75, // Simplified representation of support structure
             2027: 0.070 * 0.50,
             2028: 0.090 * 0.25
         };
@@ -163,47 +208,82 @@
             2028: { '55_and_below': 0.200, 'above_55': 0.120 }
         };
 
-        // 2. Platform/Service Buyer (SB) Contribution Rates on NTI
+        // Platform/Service Buyer (SB) Contribution Rates on NTI
         const SB_CPF_RATES_FLAT = {
             2025: 0.015, // 1.5%
             2026: 0.030, // 3.0%
             2027: 0.045, // 4.5%
-            2028: 0.060  // 6.0%
+            2028: 0.060  // 6.0%
         };
+        
+        // Cache DOM elements (modeMultiplierSelect removed)
+        let yearSelect, earnIncomeInput, ageInput, deductionTierSelect;
+        let netIncomeValue, cpfValue, sbCpfValue, totalCpfValue, pctsValue, wisValue;
+
+        // --- Utility Functions ---
+
+        /**
+         * Helper function to round a number to two decimal places for currency.
+         * @param {number} num - The number to round.
+         * @returns {number} The rounded number.
+         */
+        function roundToTwoDecimals(num) {
+            return Math.round(num * 100) / 100;
+        }
+
+        /**
+         * Helper function to format a number as currency string.
+         * @param {number} num - The number to format.
+         * @returns {string} The formatted currency string.
+         */
+        function formatCurrency(num) {
+            return `$ ${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
 
         // --- Core Calculation Logic ---
 
         function getCpfRate(year, age) {
             const yearRates = CPF_RATES[year] || {};
             if (age <= 55) {
-                // If a specific rate is not found for the year/age band, default to 0
                 return yearRates['55_and_below'] || 0;
             } else {
                 return yearRates['above_55'] || 0;
             }
         }
 
-        function calculateNetIncome(year, earnIncome, deductionTier, modeMultiplier) {
+        /**
+         * Calculates Net Trade Income (NTI).
+         * Mode Multiplier logic removed and consolidated into DEDUCTION_TIERS constant.
+         * @param {number} earnIncome - The worker's gross monthly income.
+         * @param {number} deductionTier - The selected deduction tier (1, 2, or 3).
+         * @returns {number} The calculated Net Trade Income.
+         */
+        function calculateNetIncome(earnIncome, deductionTier) {
             let deductionRate = DEDUCTION_TIERS[deductionTier] || 0;
 
-            // Multiplier logic: Applies 10% increase to the base deduction rate for Tier 2 only
-            if (modeMultiplier === 2) {
-                deductionRate *= 1.1;
-            }
+            // The multiplier logic has been removed as the rate for Tier 2 is now explicitly set to 45%.
+
+            // Ensure deduction rate does not exceed 100% (NTI floor is 0)
+            deductionRate = Math.min(deductionRate, 1.0);
 
             // Net Trade Income (NTI) = Earn Income * (1 - Deduction Rate)
             const netIncome = earnIncome * (1 - deductionRate);
-            return parseFloat(netIncome.toFixed(2));
+            
+            // Round NTI to 2 decimal places
+            return roundToTwoDecimals(netIncome);
         }
 
         function calculatePctsAmount(year, netIncome) {
             const PCTS_THRESHOLD = 3000;
+
             // PCTS applies only if NTI is below S$3,000
             if (netIncome >= PCTS_THRESHOLD) {
                 return 0;
             }
             const pctsRate = PCTS_RATES[year] || 0;
-            return parseFloat((netIncome * pctsRate).toFixed(2));
+            
+            // Calculate PCTS amount and round
+            return roundToTwoDecimals(netIncome * pctsRate);
         }
         
         function checkWisEligibility(netIncome) {
@@ -220,39 +300,16 @@
 
         // --- UI Handling and Validation ---
 
-        function highlightError(elementId, isError) {
-            const element = document.getElementById(elementId);
+        function highlightError(element, isError) {
             if (isError) {
+                // Use input-error class defined in CSS
                 element.classList.add('input-error');
-                element.classList.add('border-red-500');
             } else {
                 element.classList.remove('input-error');
-                element.classList.remove('border-red-500');
             }
         }
 
-        function handleTierChange() {
-            const tierSelect = document.getElementById('deductionTier');
-            const multiplierSelect = document.getElementById('modeMultiplier');
-            const multiplierNote = document.getElementById('multiplierNote');
-            const selectedTier = tierSelect.value;
-            
-            // Only Tier 2 can use the multiplier
-            if (selectedTier === '2') {
-                multiplierSelect.disabled = false;
-                multiplierSelect.classList.remove('bg-disabled');
-                multiplierNote.textContent = 'Apply 10% multiplier if using motorized PMD/PAB/Motorcycle (Tier 2).';
-            } else { 
-                multiplierSelect.value = '1'; // Force "No Multiplier"
-                multiplierSelect.disabled = true;
-                multiplierSelect.classList.add('bg-disabled');
-                
-                let note = (selectedTier === '1') 
-                    ? 'Multiplier is disabled for Tier 1 (Non-motorized/Public Transport).'
-                    : 'Multiplier is disabled for Tier 3 (Car/Van).';
-                multiplierNote.textContent = note;
-            }
-        }
+        // handleTierChange is removed as it only controlled the now-removed multiplier input.
 
         function resetForm() {
             const currentSystemYear = new Date().getFullYear();
@@ -260,70 +317,70 @@
             // Default selected year: The earliest of the current year or MAX_YEAR, clamped to MIN_YEAR
             const defaultYear = Math.max(MIN_YEAR, Math.min(MAX_YEAR, currentSystemYear));
 
-            document.getElementById('year').value = defaultYear;
-            document.getElementById('earnIncome').value = '';
-            document.getElementById('age').value = ''; 
-            document.getElementById('deductionTier').value = 3; 
+            yearSelect.value = defaultYear;
+            earnIncomeInput.value = '';
+            ageInput.value = ''; 
+            deductionTierSelect.value = 3; // Default to Tier 3
             
-            handleTierChange();
-
+            // handleTierChange() call removed
+            
             // Clear error highlights
-            highlightError('earnIncome', false);
-            highlightError('age', false);
+            highlightError(earnIncomeInput, false);
+            highlightError(ageInput, false);
             
-            // Reset result labels
-            document.getElementById('netIncomeValue').textContent = '$ 0.00';
-            document.getElementById('cpfValue').textContent = '$ 0.00';
-            document.getElementById('sbCpfValue').textContent = '$ 0.00'; 
-            document.getElementById('totalCpfValue').textContent = '$ 0.00';
-            document.getElementById('pctsValue').textContent = '$ 0.00';
+            // Reset result labels (using the new utility function)
+            netIncomeValue.textContent = formatCurrency(0);
+            cpfValue.textContent = formatCurrency(0);
+            sbCpfValue.textContent = formatCurrency(0); 
+            totalCpfValue.textContent = formatCurrency(0);
+            pctsValue.textContent = formatCurrency(0);
             
-            document.getElementById('wisValue').textContent = '--';
-            document.getElementById('wisValue').classList.value = 'text-right font-bold text-lg text-gray-500';
+            wisValue.textContent = '--';
+            wisValue.classList.value = 'text-right font-bold text-lg text-gray-500';
         }
 
         function calculate() {
             let isValid = true;
 
-            // 1. Get Inputs
-            const year = parseInt(document.getElementById('year').value);
-            const earnIncomeInput = document.getElementById('earnIncome');
-            const ageInput = document.getElementById('age'); 
-            const deductionTier = parseInt(document.getElementById('deductionTier').value);
-            const modeMultiplier = parseInt(document.getElementById('modeMultiplier').value); 
+            // 1. Get Inputs (modeMultiplier removed)
+            const year = parseInt(yearSelect.value);
+            const deductionTier = parseInt(deductionTierSelect.value);
+            // const modeMultiplier = parseInt(modeMultiplierSelect.value); // Removed
             
             // 2. Validation
             const earnIncome = parseFloat(earnIncomeInput.value);
             const age = parseInt(ageInput.value); 
 
             if (isNaN(earnIncome) || earnIncome <= 0) {
-                highlightError('earnIncome', true);
+                highlightError(earnIncomeInput, true);
                 isValid = false;
             } else {
-                highlightError('earnIncome', false);
+                highlightError(earnIncomeInput, false);
             }
 
             if (isNaN(age) || age < 18 || age > 100) { 
-                highlightError('age', true);
+                highlightError(ageInput, true);
                 isValid = false;
             } else {
-                highlightError('age', false);
+                highlightError(ageInput, false);
             }
 
             if (!isValid) {
-                document.getElementById('wisValue').textContent = "Input Error";
-                document.getElementById('wisValue').classList.value = 'text-right font-bold text-lg text-red-500';
+                wisValue.textContent = "Input Error";
+                wisValue.classList.value = 'text-right font-bold text-lg text-red-500';
+                
                 // Reset other values on error
-                document.getElementById('netIncomeValue').textContent = '$ 0.00';
-                document.getElementById('cpfValue').textContent = '$ 0.00';
-                document.getElementById('sbCpfValue').textContent = '$ 0.00'; 
-                document.getElementById('totalCpfValue').textContent = '$ 0.00';
-                document.getElementById('pctsValue').textContent = '$ 0.00';
+                netIncomeValue.textContent = formatCurrency(0);
+                cpfValue.textContent = formatCurrency(0);
+                sbCpfValue.textContent = formatCurrency(0); 
+                totalCpfValue.textContent = formatCurrency(0);
+                pctsValue.textContent = formatCurrency(0);
                 return;
             }
 
             // 3. Perform Calculations
-            const netIncome = calculateNetIncome(year, earnIncome, deductionTier, modeMultiplier);
+            // modeMultiplier argument removed
+            const netIncome = calculateNetIncome(earnIncome, deductionTier);
             
             // Apply OW Ceiling (Capped NTI for CPF calculation purposes)
             const owCeiling = OW_CEILINGS[year] || 0; 
@@ -331,54 +388,63 @@
 
             // Calculate Worker's Share
             const cpfRate = getCpfRate(year, age);
-            const cpfContribution = parseFloat((cpfCalculableIncome * cpfRate).toFixed(2));
+            const cpfContribution = roundToTwoDecimals(cpfCalculableIncome * cpfRate);
             
             // Calculate Service Buyer's Share
             const sbCpfRate = SB_CPF_RATES_FLAT[year] || 0; 
-            const sbContribution = parseFloat((cpfCalculableIncome * sbCpfRate).toFixed(2));
+            const sbContribution = roundToTwoDecimals(cpfCalculableIncome * sbCpfRate);
 
-            const totalCpf = parseFloat((cpfContribution + sbContribution).toFixed(2));
+            const totalCpf = roundToTwoDecimals(cpfContribution + sbContribution);
             
             const pctsAmount = calculatePctsAmount(year, netIncome);
             const wisEligibility = checkWisEligibility(netIncome);
 
-            // 4. Display Results
-            document.getElementById('netIncomeValue').textContent = `$ ${netIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-            document.getElementById('cpfValue').textContent = `$ ${cpfContribution.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-            document.getElementById('sbCpfValue').textContent = `$ ${sbContribution.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-            document.getElementById('totalCpfValue').textContent = `$ ${totalCpf.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-            document.getElementById('pctsValue').textContent = `$ ${pctsAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            // 4. Display Results (using cached elements and utility function)
+            netIncomeValue.textContent = formatCurrency(netIncome);
+            cpfValue.textContent = formatCurrency(cpfContribution);
+            sbCpfValue.textContent = formatCurrency(sbContribution);
+            totalCpfValue.textContent = formatCurrency(totalCpf);
+            pctsValue.textContent = formatCurrency(pctsAmount);
             
-            document.getElementById('wisValue').textContent = wisEligibility.text;
-            document.getElementById('wisValue').classList.value = `text-right font-bold text-lg text-${wisEligibility.color}`;
+            wisValue.textContent = wisEligibility.text;
+            wisValue.classList.value = `text-right font-bold text-lg text-${wisEligibility.color}`;
         }
         
         // Function to dynamically populate the year dropdown
         function populateYearDropdown() {
-            const yearSelect = document.getElementById('year');
-            const currentSystemYear = new Date().getFullYear();
-            
-            // Calculate the year to be selected by default (must be within MIN_YEAR and MAX_YEAR)
-            const defaultYear = Math.max(MIN_YEAR, Math.min(MAX_YEAR, currentSystemYear));
-            
-            // Loop only through the defined years (2025 to 2028)
             for (let y = MIN_YEAR; y <= MAX_YEAR; y++) {
                 const option = document.createElement('option');
                 option.value = y;
                 option.textContent = y;
-                if (y === defaultYear) {
-                    option.selected = true;
-                }
                 yearSelect.appendChild(option);
             }
         }
 
         // Initial setup
         document.addEventListener('DOMContentLoaded', () => {
-             populateYearDropdown();
-             resetForm(); 
+            // Cache all necessary DOM elements once (modeMultiplierSelect removed)
+            yearSelect = document.getElementById('year');
+            earnIncomeInput = document.getElementById('earnIncome');
+            ageInput = document.getElementById('age'); 
+            deductionTierSelect = document.getElementById('deductionTier');
+            
+            // modeMultiplierSelect element no longer exists
+
+            netIncomeValue = document.getElementById('netIncomeValue');
+            cpfValue = document.getElementById('cpfValue');
+            sbCpfValue = document.getElementById('sbCpfValue');
+            totalCpfValue = document.getElementById('totalCpfValue');
+            pctsValue = document.getElementById('pctsValue');
+            wisValue = document.getElementById('wisValue');
+            
+            populateYearDropdown();
+
+            // Call reset to set default values
+            resetForm(); 
         });
 
     </script>
+
 </body>
+
 </html>
