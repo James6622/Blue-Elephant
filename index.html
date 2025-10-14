@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Platform Worker Financial Calculator (SG) V2.4</title>
+    <title>Platform Worker Financial Calculator (SG) V2.5</title>
 
     <!-- Load Tailwind CSS -->
 
@@ -21,7 +21,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
         
-
         html, body {
 
             min-height: 100vh;
@@ -69,11 +68,11 @@
 
             <h1 class="text-2xl font-bold">Singapore Platform Worker Calculator</h1>
 
-            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.4</p>
+            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.5</p>
 
         </header>
 
-        <!-- 1. Disclaimer Section - RESTORED ORIGINAL TEXT -->
+        <!-- 1. Disclaimer Section -->
 
         <div class="p-4 bg-yellow-100 text-yellow-800 text-xs border-b border-yellow-300">
 
@@ -119,14 +118,13 @@
                     <label for="deductionTier" class="text-gray-600 font-medium mb-1">Fixed Expense Deduction Tier:</label>
                     <select id="deductionTier" 
                         class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                        <!-- Note: Tier 2 rate now includes the implicit +10% multiplier (35% -> 45%) -->
                         <option value="1">1: Low (Foot, Public Transport) - 20%</option>
-                        <option value="2">2: Medium (PMD/PAB/Motorcycle) - 45% (Includes motorized transport deduction)</option>
+                        <option value="2">2: Medium (PMD/PAB/Motorcycle) - 35%</option>
                         <option value="3" selected>3: High (Car/Van) - 60%</option>
                     </select>
                 </div>
 
-                <!-- The Mode Multiplier selection (Input 5) has been removed -->
+                <!-- The Mode Multiplier selection (Input 5) has been permanently removed -->
             </div>
 
             <!-- Calculation and Reset Buttons -->
@@ -184,10 +182,10 @@
             2028: 8800
         };
         
-        // Deduction rates. Note: Tier 2 is now 0.45 (35% base + 10% motorized multiplier, since the selection option was removed and we assume the highest possible deduction for Tier 2).
+        // Deduction rates. Tier 2 is now correctly 35%.
         const DEDUCTION_TIERS = {
             1: 0.20, // Low (Foot, Public Transport)
-            2: 0.45, // Medium (PMD/PAB/Motorcycle) - **UPDATED: 35% + 10% = 45%**
+            2: 0.35, // Medium (PMD/PAB/Motorcycle) - CORRECTED BACK TO 35%
             3: 0.60  // High (Car/Van)
         };
         
@@ -253,15 +251,14 @@
 
         /**
          * Calculates Net Trade Income (NTI).
-         * Mode Multiplier logic removed and consolidated into DEDUCTION_TIERS constant.
+         * Deduction rate is now strictly based on the selected tier constant.
          * @param {number} earnIncome - The worker's gross monthly income.
          * @param {number} deductionTier - The selected deduction tier (1, 2, or 3).
          * @returns {number} The calculated Net Trade Income.
          */
         function calculateNetIncome(earnIncome, deductionTier) {
+            // Get rate directly from the DEDUCTION_TIERS map (now correct)
             let deductionRate = DEDUCTION_TIERS[deductionTier] || 0;
-
-            // The multiplier logic has been removed as the rate for Tier 2 is now explicitly set to 45%.
 
             // Ensure deduction rate does not exceed 100% (NTI floor is 0)
             deductionRate = Math.min(deductionRate, 1.0);
@@ -308,8 +305,8 @@
                 element.classList.remove('input-error');
             }
         }
-
-        // handleTierChange is removed as it only controlled the now-removed multiplier input.
+        
+        // handleTierChange function is fully removed as it only controlled the multiplier input.
 
         function resetForm() {
             const currentSystemYear = new Date().getFullYear();
@@ -322,13 +319,11 @@
             ageInput.value = ''; 
             deductionTierSelect.value = 3; // Default to Tier 3
             
-            // handleTierChange() call removed
-            
             // Clear error highlights
             highlightError(earnIncomeInput, false);
             highlightError(ageInput, false);
             
-            // Reset result labels (using the new utility function)
+            // Reset result labels 
             netIncomeValue.textContent = formatCurrency(0);
             cpfValue.textContent = formatCurrency(0);
             sbCpfValue.textContent = formatCurrency(0); 
@@ -342,10 +337,9 @@
         function calculate() {
             let isValid = true;
 
-            // 1. Get Inputs (modeMultiplier removed)
+            // 1. Get Inputs 
             const year = parseInt(yearSelect.value);
             const deductionTier = parseInt(deductionTierSelect.value);
-            // const modeMultiplier = parseInt(modeMultiplierSelect.value); // Removed
             
             // 2. Validation
             const earnIncome = parseFloat(earnIncomeInput.value);
@@ -379,7 +373,6 @@
             }
 
             // 3. Perform Calculations
-            // modeMultiplier argument removed
             const netIncome = calculateNetIncome(earnIncome, deductionTier);
             
             // Apply OW Ceiling (Capped NTI for CPF calculation purposes)
@@ -399,7 +392,7 @@
             const pctsAmount = calculatePctsAmount(year, netIncome);
             const wisEligibility = checkWisEligibility(netIncome);
 
-            // 4. Display Results (using cached elements and utility function)
+            // 4. Display Results
             netIncomeValue.textContent = formatCurrency(netIncome);
             cpfValue.textContent = formatCurrency(cpfContribution);
             sbCpfValue.textContent = formatCurrency(sbContribution);
@@ -422,14 +415,12 @@
 
         // Initial setup
         document.addEventListener('DOMContentLoaded', () => {
-            // Cache all necessary DOM elements once (modeMultiplierSelect removed)
+            // Cache all necessary DOM elements once 
             yearSelect = document.getElementById('year');
             earnIncomeInput = document.getElementById('earnIncome');
             ageInput = document.getElementById('age'); 
             deductionTierSelect = document.getElementById('deductionTier');
             
-            // modeMultiplierSelect element no longer exists
-
             netIncomeValue = document.getElementById('netIncomeValue');
             cpfValue = document.getElementById('cpfValue');
             sbCpfValue = document.getElementById('sbCpfValue');
