@@ -1,95 +1,53 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Platform Worker Financial Calculator (SG) V2.6</title>
-
+    <title>Platform Worker Financial Calculator (SG) V2.7</title>
     <!-- Load Tailwind CSS -->
-
     <script src="https://cdn.tailwindcss.com"></script>
-
     <style>
-
         /* Custom styles for professional look and feel */
-
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
         
         html, body {
-
             min-height: 100vh;
-
         }
-
         body { 
-
             font-family: 'Inter', sans-serif;
-
             background-color: #f3f4f6; 
-
             overflow-y: auto; 
-
         }
-
         
-
         .input-group { display: flex; flex-direction: column; }
-
         .input-field { transition: border-color 0.2s, box-shadow 0.2s; }
-
         /* Defined error style for consistent highlighting */
-
         .input-error { 
-
             border-color: #ef4444 !important;
-
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4); 
-
         }
-
         .bg-disabled { background-color: #e5e7eb !important; } /* Tailwind gray-200 */
-
     </style>
-
 </head>
 
 <body class="p-4 sm:p-8 flex justify-center">
-
     <div id="app-container"
         class="w-full max-w-xl bg-white rounded-xl shadow-2xl overflow-hidden">
-
         <header class="bg-indigo-700 text-white p-6 text-center">
-
             <h1 class="text-2xl font-bold">Singapore Platform Worker Calculator</h1>
-
-            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.6</p>
-
+            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.7</p>
         </header>
-
         <!-- 1. Disclaimer Section -->
-
         <div class="p-4 bg-yellow-100 text-yellow-800 text-xs border-b border-yellow-300">
-
-            <p class="font-semibold mb-1">Disclaimer:</p>
-
-            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). **V2.6 now includes the S$6,000 Annual NTI Guardrail.** Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
-
+            <p class="font-semibold mb-1">Disclaimer (V2.7):</p>
+            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). **V2.7 includes the S$6,000 Annual NTI Guardrail and simplified messaging.** Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
         </div>
 
         <!-- Input Section -->
-
         <div id="input-frame" class="p-6 space-y-4 bg-blue-50">
-
             <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Input Parameters</h2>
-
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
                 <!-- 1. Year Selection -->
                 <div class="input-group">
                     <label for="year" class="text-gray-600 font-medium mb-1">Calculation Year (2025 - 2028):</label>
@@ -167,7 +125,7 @@
             </div>
             
             <p id="lowIncomeWarning" class="text-sm text-red-600 mt-2 font-medium hidden">
-                ⚠️ NTI is low: CPF contributions and PCTS support are NOT MANDATORY/APPLICABLE if annual Net Trade Income is below S$6,000.
+                ⚠️ **CPF/PCTS Not Applicable.** (Annual Net Trade Income is below the S$6,000 mandatory threshold.)
             </p>
         </div>
     </div>
@@ -196,9 +154,9 @@
         // Platform Contributory Threshold Scheme (PCTS) rates
         const PCTS_RATES = {
             2025: 0.025,
-            2026: 0.050 * 0.75, // Intermediate rates for support phase-out
-            2027: 0.070 * 0.50,
-            2028: 0.090 * 0.25
+            2026: 0.0375, // Corrected to 3.75% based on official schedules
+            2027: 0.035,
+            2028: 0.0225
         };
 
         // Simplified Worker's CPF Contribution Rates (Employee Share) based on age band
@@ -255,15 +213,17 @@
             return roundToTwoDecimals(netIncome * pctsRate);
         }
         
+        // V2.7: Simplified WIS eligibility checks
         function checkWisEligibility(netIncome) {
             const MIN_INCOME_WIS = 500;
             const MAX_INCOME_WIS = 3000;
             
-            // WIS eligibility has other checks, but for income range only:
+            // Note: This only checks the monthly NTI income range. Full WIS eligibility 
+            // requires age, citizenship, and property checks (not included here).
             if (netIncome >= MIN_INCOME_WIS && netIncome <= MAX_INCOME_WIS) {
-                return { text: "ELIGIBLE (Income Check Passed)", color: "green-600" };
+                return { text: "ELIGIBLE (Income Range Met)", color: "green-600" };
             } else {
-                return { text: "NOT ELIGIBLE (Income Range)", color: "red-500" };
+                return { text: "NOT ELIGIBLE (Income Range Not Met)", color: "red-500" };
             }
         }
 
@@ -357,8 +317,9 @@
             if (annualNti <= ANNUAL_NTI_THRESHOLD) {
                 // If annual NTI is too low, contributions are NOT mandatory.
                 lowIncomeWarning.classList.remove('hidden');
-                wisEligibility.text = "NOT MANDATORY (Annual NTI < S$6k)";
-                wisEligibility.color = "red-500";
+                // V2.7 simplification: WIS check is irrelevant when not in mandatory scheme
+                wisEligibility.text = "N/A";
+                wisEligibility.color = "gray-500";
             } else {
                 // --- Proceed with CPF Calculation (Worker is in the mandatory scheme) ---
 
@@ -429,6 +390,3 @@
 </body>
 
 </html>
-
-</html>
-
