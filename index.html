@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Platform Worker Financial Calculator (SG) V2.5</title>
+    <title>Platform Worker Financial Calculator (SG) V2.6</title>
 
     <!-- Load Tailwind CSS -->
 
@@ -68,7 +68,7 @@
 
             <h1 class="text-2xl font-bold">Singapore Platform Worker Calculator</h1>
 
-            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.5</p>
+            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.6</p>
 
         </header>
 
@@ -78,7 +78,7 @@
 
             <p class="font-semibold mb-1">Disclaimer:</p>
 
-            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
+            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). **V2.6 now includes the S$6,000 Annual NTI Guardrail.** Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
 
         </div>
 
@@ -124,7 +124,6 @@
                     </select>
                 </div>
 
-                <!-- The Mode Multiplier selection (Input 5) has been permanently removed -->
             </div>
 
             <!-- Calculation and Reset Buttons -->
@@ -166,6 +165,10 @@
                 <span class="font-medium text-gray-600">WIS Eligibility (Income Check):</span>
                 <span id="wisValue" class="text-right font-bold text-lg text-gray-500">--</span>
             </div>
+            
+            <p id="lowIncomeWarning" class="text-sm text-red-600 mt-2 font-medium hidden">
+                ⚠️ NTI is low: CPF contributions and PCTS support are NOT MANDATORY/APPLICABLE if annual Net Trade Income is below S$6,000.
+            </p>
         </div>
     </div>
 
@@ -173,6 +176,7 @@
         // --- Financial Constants ---
         const MIN_YEAR = 2025; 
         const MAX_YEAR = 2028; 
+        const ANNUAL_NTI_THRESHOLD = 6000; // S$6,000 threshold for mandatory CPF
 
         // OW Ceiling (Capped NTI for CPF calculation purposes)
         const OW_CEILINGS = {
@@ -185,15 +189,14 @@
         // Deduction rates. Tier 2 is now correctly 35%.
         const DEDUCTION_TIERS = {
             1: 0.20, // Low (Foot, Public Transport)
-            2: 0.35, // Medium (PMD/PAB/Motorcycle) - CORRECTED BACK TO 35%
+            2: 0.35, // Medium (PMD/PAB/Motorcycle)
             3: 0.60  // High (Car/Van)
         };
         
         // Platform Contributory Threshold Scheme (PCTS) rates
         const PCTS_RATES = {
-            // Rates are applied on NTI < $3,000, then PCTS support tapers off.
             2025: 0.025,
-            2026: 0.050 * 0.75, // Simplified representation of support structure
+            2026: 0.050 * 0.75, // Intermediate rates for support phase-out
             2027: 0.070 * 0.50,
             2028: 0.090 * 0.25
         };
@@ -214,31 +217,19 @@
             2028: 0.060  // 6.0%
         };
         
-        // Cache DOM elements (modeMultiplierSelect removed)
-        let yearSelect, earnIncomeInput, ageInput, deductionTierSelect;
+        // Cache DOM elements
+        let yearSelect, earnIncomeInput, ageInput, deductionTierSelect, lowIncomeWarning;
         let netIncomeValue, cpfValue, sbCpfValue, totalCpfValue, pctsValue, wisValue;
 
         // --- Utility Functions ---
 
-        /**
-         * Helper function to round a number to two decimal places for currency.
-         * @param {number} num - The number to round.
-         * @returns {number} The rounded number.
-         */
         function roundToTwoDecimals(num) {
             return Math.round(num * 100) / 100;
         }
 
-        /**
-         * Helper function to format a number as currency string.
-         * @param {number} num - The number to format.
-         * @returns {string} The formatted currency string.
-         */
         function formatCurrency(num) {
             return `$ ${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
-
-        // --- Core Calculation Logic ---
 
         function getCpfRate(year, age) {
             const yearRates = CPF_RATES[year] || {};
@@ -249,37 +240,18 @@
             }
         }
 
-        /**
-         * Calculates Net Trade Income (NTI).
-         * Deduction rate is now strictly based on the selected tier constant.
-         * @param {number} earnIncome - The worker's gross monthly income.
-         * @param {number} deductionTier - The selected deduction tier (1, 2, or 3).
-         * @returns {number} The calculated Net Trade Income.
-         */
         function calculateNetIncome(earnIncome, deductionTier) {
-            // Get rate directly from the DEDUCTION_TIERS map (now correct)
             let deductionRate = DEDUCTION_TIERS[deductionTier] || 0;
-
-            // Ensure deduction rate does not exceed 100% (NTI floor is 0)
-            deductionRate = Math.min(deductionRate, 1.0);
-
-            // Net Trade Income (NTI) = Earn Income * (1 - Deduction Rate)
             const netIncome = earnIncome * (1 - deductionRate);
-            
-            // Round NTI to 2 decimal places
             return roundToTwoDecimals(netIncome);
         }
 
         function calculatePctsAmount(year, netIncome) {
             const PCTS_THRESHOLD = 3000;
-
-            // PCTS applies only if NTI is below S$3,000
             if (netIncome >= PCTS_THRESHOLD) {
                 return 0;
             }
             const pctsRate = PCTS_RATES[year] || 0;
-            
-            // Calculate PCTS amount and round
             return roundToTwoDecimals(netIncome * pctsRate);
         }
         
@@ -287,7 +259,7 @@
             const MIN_INCOME_WIS = 500;
             const MAX_INCOME_WIS = 3000;
             
-            // WIS eligibility check is based on income range only for this calculator
+            // WIS eligibility has other checks, but for income range only:
             if (netIncome >= MIN_INCOME_WIS && netIncome <= MAX_INCOME_WIS) {
                 return { text: "ELIGIBLE (Income Check Passed)", color: "green-600" };
             } else {
@@ -299,27 +271,21 @@
 
         function highlightError(element, isError) {
             if (isError) {
-                // Use input-error class defined in CSS
                 element.classList.add('input-error');
             } else {
                 element.classList.remove('input-error');
             }
         }
-        
-        // handleTierChange function is fully removed as it only controlled the multiplier input.
 
         function resetForm() {
             const currentSystemYear = new Date().getFullYear();
-            
-            // Default selected year: The earliest of the current year or MAX_YEAR, clamped to MIN_YEAR
             const defaultYear = Math.max(MIN_YEAR, Math.min(MAX_YEAR, currentSystemYear));
 
             yearSelect.value = defaultYear;
             earnIncomeInput.value = '';
             ageInput.value = ''; 
-            deductionTierSelect.value = 3; // Default to Tier 3
+            deductionTierSelect.value = 3; 
             
-            // Clear error highlights
             highlightError(earnIncomeInput, false);
             highlightError(ageInput, false);
             
@@ -332,6 +298,7 @@
             
             wisValue.textContent = '--';
             wisValue.classList.value = 'text-right font-bold text-lg text-gray-500';
+            lowIncomeWarning.classList.add('hidden');
         }
 
         function calculate() {
@@ -345,7 +312,7 @@
             const earnIncome = parseFloat(earnIncomeInput.value);
             const age = parseInt(ageInput.value); 
 
-            if (isNaN(earnIncome) || earnIncome <= 0) {
+            if (isNaN(earnIncome) || earnIncome < 0) { // Allow 0, but check for negative/NaN
                 highlightError(earnIncomeInput, true);
                 isValid = false;
             } else {
@@ -369,31 +336,53 @@
                 sbCpfValue.textContent = formatCurrency(0); 
                 totalCpfValue.textContent = formatCurrency(0);
                 pctsValue.textContent = formatCurrency(0);
+                lowIncomeWarning.classList.add('hidden');
                 return;
             }
 
-            // 3. Perform Calculations
+            // 3. Perform Initial NTI Calculation
             const netIncome = calculateNetIncome(earnIncome, deductionTier);
-            
-            // Apply OW Ceiling (Capped NTI for CPF calculation purposes)
-            const owCeiling = OW_CEILINGS[year] || 0; 
-            const cpfCalculableIncome = Math.min(netIncome, owCeiling); 
+            netIncomeValue.textContent = formatCurrency(netIncome);
 
-            // Calculate Worker's Share
-            const cpfRate = getCpfRate(year, age);
-            const cpfContribution = roundToTwoDecimals(cpfCalculableIncome * cpfRate);
-            
-            // Calculate Service Buyer's Share
-            const sbCpfRate = SB_CPF_RATES_FLAT[year] || 0; 
-            const sbContribution = roundToTwoDecimals(cpfCalculableIncome * sbCpfRate);
+            // --- V2.6 GUARDRAIL: Check Annual NTI for Mandatory CPF Obligation ---
+            let cpfContribution = 0;
+            let sbContribution = 0;
+            let pctsAmount = 0;
+            let totalCpf = 0;
+            let wisEligibility = { text: "N/A", color: "gray-500" };
+            lowIncomeWarning.classList.add('hidden'); // Hide by default
 
-            const totalCpf = roundToTwoDecimals(cpfContribution + sbContribution);
-            
-            const pctsAmount = calculatePctsAmount(year, netIncome);
-            const wisEligibility = checkWisEligibility(netIncome);
+            const annualNti = netIncome * 12;
+
+            if (annualNti <= ANNUAL_NTI_THRESHOLD) {
+                // If annual NTI is too low, contributions are NOT mandatory.
+                lowIncomeWarning.classList.remove('hidden');
+                wisEligibility.text = "NOT MANDATORY (Annual NTI < S$6k)";
+                wisEligibility.color = "red-500";
+            } else {
+                // --- Proceed with CPF Calculation (Worker is in the mandatory scheme) ---
+
+                // Apply OW Ceiling (Capped NTI for CPF calculation purposes)
+                const owCeiling = OW_CEILINGS[year] || 0; 
+                const cpfCalculableIncome = Math.min(netIncome, owCeiling); 
+
+                // Calculate Worker's Share
+                const cpfRate = getCpfRate(year, age);
+                cpfContribution = roundToTwoDecimals(cpfCalculableIncome * cpfRate);
+                
+                // Calculate Service Buyer's Share
+                const sbCpfRate = SB_CPF_RATES_FLAT[year] || 0; 
+                sbContribution = roundToTwoDecimals(cpfCalculableIncome * sbCpfRate);
+
+                totalCpf = roundToTwoDecimals(cpfContribution + sbContribution);
+                
+                pctsAmount = calculatePctsAmount(year, netIncome);
+                wisEligibility = checkWisEligibility(netIncome);
+            }
+            // --- End of V2.6 GUARDRAIL ---
+
 
             // 4. Display Results
-            netIncomeValue.textContent = formatCurrency(netIncome);
             cpfValue.textContent = formatCurrency(cpfContribution);
             sbCpfValue.textContent = formatCurrency(sbContribution);
             totalCpfValue.textContent = formatCurrency(totalCpf);
@@ -420,6 +409,7 @@
             earnIncomeInput = document.getElementById('earnIncome');
             ageInput = document.getElementById('age'); 
             deductionTierSelect = document.getElementById('deductionTier');
+            lowIncomeWarning = document.getElementById('lowIncomeWarning');
             
             netIncomeValue = document.getElementById('netIncomeValue');
             cpfValue = document.getElementById('cpfValue');
@@ -439,3 +429,6 @@
 </body>
 
 </html>
+
+</html>
+
