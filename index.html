@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Platform Worker Financial Calculator (SG) V2.7</title>
+    <title>Platform Worker Financial Calculator (SG) V2.8</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -36,12 +36,12 @@
         class="w-full max-w-xl bg-white rounded-xl shadow-2xl overflow-hidden">
         <header class="bg-indigo-700 text-white p-6 text-center">
             <h1 class="text-2xl font-bold">Singapore Platform Worker Calculator</h1>
-            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.7</p>
+            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.8</p>
         </header>
         <!-- 1. Disclaimer Section -->
         <div class="p-4 bg-yellow-100 text-yellow-800 text-xs border-b border-yellow-300">
-            <p class="font-semibold mb-1">Disclaimer (V2.7):</p>
-            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). **V2.7 includes the S$6,000 Annual NTI Guardrail and simplified messaging.** Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
+            <p class="font-semibold mb-1">Disclaimer (V2.8):</p>
+            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). **V2.8 now includes the correct 3-band age structure (Below 55, 55-59, 60+) for CPF rates** and uses simplified messaging for better clarity. Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
         </div>
 
         <!-- Input Section -->
@@ -154,17 +154,17 @@
         // Platform Contributory Threshold Scheme (PCTS) rates
         const PCTS_RATES = {
             2025: 0.025,
-            2026: 0.0375, // Corrected to 3.75% based on official schedules
+            2026: 0.0375, 
             2027: 0.035,
             2028: 0.0225
         };
 
-        // Simplified Worker's CPF Contribution Rates (Employee Share) based on age band
+        // V2.8 CRITICAL UPDATE: Worker's CPF Contribution Rates based on 3 age bands
         const CPF_RATES = {
-            2025: { '55_and_below': 0.135, 'above_55': 0.090 },
-            2026: { '55_and_below': 0.155, 'above_55': 0.100 },
-            2027: { '55_and_below': 0.180, 'above_55': 0.110 },
-            2028: { '55_and_below': 0.200, 'above_55': 0.120 }
+            2025: { 'below_55': 0.135, '55_to_60': 0.090, 'above_60': 0.065 },
+            2026: { 'below_55': 0.155, '55_to_60': 0.100, 'above_60': 0.075 },
+            2027: { 'below_55': 0.180, '55_to_60': 0.110, 'above_60': 0.085 },
+            2028: { 'below_55': 0.200, '55_to_60': 0.120, 'above_60': 0.095 }
         };
 
         // Platform/Service Buyer (SB) Contribution Rates on NTI
@@ -189,12 +189,15 @@
             return `$ ${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
 
+        // V2.8: Updated logic for 3 age bands
         function getCpfRate(year, age) {
             const yearRates = CPF_RATES[year] || {};
-            if (age <= 55) {
-                return yearRates['55_and_below'] || 0;
-            } else {
-                return yearRates['above_55'] || 0;
+            if (age < 55) {
+                return yearRates['below_55'] || 0;
+            } else if (age >= 55 && age < 60) {
+                return yearRates['55_to_60'] || 0;
+            } else { // age >= 60
+                return yearRates['above_60'] || 0;
             }
         }
 
@@ -213,13 +216,12 @@
             return roundToTwoDecimals(netIncome * pctsRate);
         }
         
-        // V2.7: Simplified WIS eligibility checks
+        // V2.7: Simplified WIS eligibility checks (Income Check Only)
         function checkWisEligibility(netIncome) {
             const MIN_INCOME_WIS = 500;
             const MAX_INCOME_WIS = 3000;
             
-            // Note: This only checks the monthly NTI income range. Full WIS eligibility 
-            // requires age, citizenship, and property checks (not included here).
+            // Note: This only checks the monthly NTI income range.
             if (netIncome >= MIN_INCOME_WIS && netIncome <= MAX_INCOME_WIS) {
                 return { text: "ELIGIBLE (Income Range Met)", color: "green-600" };
             } else {
@@ -327,16 +329,17 @@
                 const owCeiling = OW_CEILINGS[year] || 0; 
                 const cpfCalculableIncome = Math.min(netIncome, owCeiling); 
 
-                // Calculate Worker's Share
+                // Calculate Worker's Share (V2.8 uses 3 age bands)
                 const cpfRate = getCpfRate(year, age);
                 cpfContribution = roundToTwoDecimals(cpfCalculableIncome * cpfRate);
                 
-                // Calculate Service Buyer's Share
+                // Calculate Service Buyer's Share (flat rate)
                 const sbCpfRate = SB_CPF_RATES_FLAT[year] || 0; 
                 sbContribution = roundToTwoDecimals(cpfCalculableIncome * sbCpfRate);
 
                 totalCpf = roundToTwoDecimals(cpfContribution + sbContribution);
                 
+                // PCTS is calculated on NTI, regardless of age band
                 pctsAmount = calculatePctsAmount(year, netIncome);
                 wisEligibility = checkWisEligibility(netIncome);
             }
