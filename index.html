@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Platform Worker Financial Calculator (SG) V2.8</title>
+    <title>Platform Worker Financial Calculator (SG) V2.9</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -36,15 +36,17 @@
         class="w-full max-w-xl bg-white rounded-xl shadow-2xl overflow-hidden">
         <header class="bg-indigo-700 text-white p-6 text-center">
             <h1 class="text-2xl font-bold">Singapore Platform Worker Calculator</h1>
-            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.8</p>
+            <!-- UPDATED VERSION TO V2.9 -->
+            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.9</p>
         </header>
         <!-- 1. Disclaimer Section -->
         <div class="p-4 bg-yellow-100 text-yellow-800 text-xs border-b border-yellow-300">
-            <p class="font-semibold mb-1">Disclaimer (V2.8):</p>
-            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). **V2.8 now includes the correct 3-band age structure (Below 55, 55-59, 60+) for CPF rates** and uses simplified messaging for better clarity. Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
+            <!-- UPDATED DISCLAIMER FOR V2.9 -->
+            <p class="font-semibold mb-1">Disclaimer (V2.9 - WIS Age Check Included):</p>
+            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). The WIS check is based on the monthly income threshold (S$500-S$3,000) **and minimum age of 30**. Other criteria (Citizenship, Property ownership) are not verified here. Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
         </div>
 
-        <!-- Input Section -->
+        <!-- Input Section (NO UI CHANGES) -->
         <div id="input-frame" class="p-6 space-y-4 bg-blue-50">
             <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Input Parameters</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -60,14 +62,14 @@
                 <!-- 2. Monthly Earn Income -->
                 <div class="input-group">
                     <label for="earnIncome" class="text-gray-600 font-medium mb-1">Monthly Earn Income (S$):</label>
-                    <input type="number" id="earnIncome" placeholder="e.g., 2500"
+                    <input type="number" id="earnIncome" placeholder="e.g., 2500" min="0"
                         class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
 
                 <!-- 3. Worker's Age -->
                 <div class="input-group">
                     <label for="age" class="text-gray-600 font-medium mb-1">Worker's Age (Must be 18+):</label>
-                    <input type="number" id="age" placeholder="e.g., 30"
+                    <input type="number" id="age" placeholder="e.g., 30" min="18" max="100"
                         class="input-field p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
 
@@ -100,7 +102,7 @@
         <!-- Result Section -->
         <div id="output-frame" class="p-6 space-y-3 bg-yellow-50">
 
-            <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Calculation Results</h2>
+            <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Calculation Results </h2>
 
             <div class="grid grid-cols-2 gap-y-3">
                 <span class="font-medium text-gray-600">Net Trade Income (NTI):</span>
@@ -120,6 +122,7 @@
                 <span class="font-medium text-gray-600">PCTS Amount:</span>
                 <span id="pctsValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
 
+                <!-- REVERTED LABEL TEXT TO V2.8 FOR VISUAL CONSISTENCY -->
                 <span class="font-medium text-gray-600">WIS Eligibility (Income Check):</span>
                 <span id="wisValue" class="text-right font-bold text-lg text-gray-500">--</span>
             </div>
@@ -148,7 +151,7 @@
         const DEDUCTION_TIERS = {
             1: 0.20, // Low (Foot, Public Transport)
             2: 0.35, // Medium (PMD/PAB/Motorcycle)
-            3: 0.60  // High (Car/Van)
+            3: 0.60  // High (Car/Van)
         };
         
         // Platform Contributory Threshold Scheme (PCTS) rates
@@ -159,7 +162,7 @@
             2028: 0.0225
         };
 
-        // V2.8 CRITICAL UPDATE: Worker's CPF Contribution Rates based on 3 age bands
+        // Worker's CPF Contribution Rates based on 3 age bands
         const CPF_RATES = {
             2025: { 'below_55': 0.135, '55_to_60': 0.090, 'above_60': 0.065 },
             2026: { 'below_55': 0.155, '55_to_60': 0.100, 'above_60': 0.075 },
@@ -172,7 +175,7 @@
             2025: 0.015, // 1.5%
             2026: 0.030, // 3.0%
             2027: 0.045, // 4.5%
-            2028: 0.060  // 6.0%
+            2028: 0.060  // 6.0%
         };
         
         // Cache DOM elements
@@ -189,7 +192,6 @@
             return `$ ${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
 
-        // V2.8: Updated logic for 3 age bands
         function getCpfRate(year, age) {
             const yearRates = CPF_RATES[year] || {};
             if (age < 55) {
@@ -209,6 +211,7 @@
 
         function calculatePctsAmount(year, netIncome) {
             const PCTS_THRESHOLD = 3000;
+            // PCTS applies only if NTI is below S$3,000
             if (netIncome >= PCTS_THRESHOLD) {
                 return 0;
             }
@@ -216,14 +219,21 @@
             return roundToTwoDecimals(netIncome * pctsRate);
         }
         
-        // V2.7: Simplified WIS eligibility checks (Income Check Only)
-        function checkWisEligibility(netIncome) {
+        // V2.9: Updated WIS eligibility checks to enforce minimum age 30
+        function checkWisEligibility(netIncome, age) {
             const MIN_INCOME_WIS = 500;
             const MAX_INCOME_WIS = 3000;
+            const MIN_AGE_WIS = 30;
+
+            // 1. Check Age (Must be 30 years old or older)
+            if (age < MIN_AGE_WIS) {
+                return { text: "NOT ELIGIBLE (Below Minimum Age of 30)", color: "red-500" };
+            }
             
-            // Note: This only checks the monthly NTI income range.
+            // 2. Check Income range
             if (netIncome >= MIN_INCOME_WIS && netIncome <= MAX_INCOME_WIS) {
-                return { text: "ELIGIBLE (Income Range Met)", color: "green-600" };
+                // Assumes other criteria (Citizenship, property) are met.
+                return { text: "ELIGIBLE (Income & Age Met)", color: "green-600" };
             } else {
                 return { text: "NOT ELIGIBLE (Income Range Not Met)", color: "red-500" };
             }
@@ -306,7 +316,7 @@
             const netIncome = calculateNetIncome(earnIncome, deductionTier);
             netIncomeValue.textContent = formatCurrency(netIncome);
 
-            // --- V2.6 GUARDRAIL: Check Annual NTI for Mandatory CPF Obligation ---
+            // --- GUARDRAIL: Check Annual NTI for Mandatory CPF Obligation ---
             let cpfContribution = 0;
             let sbContribution = 0;
             let pctsAmount = 0;
@@ -319,9 +329,18 @@
             if (annualNti <= ANNUAL_NTI_THRESHOLD) {
                 // If annual NTI is too low, contributions are NOT mandatory.
                 lowIncomeWarning.classList.remove('hidden');
-                // V2.7 simplification: WIS check is irrelevant when not in mandatory scheme
-                wisEligibility.text = "N/A";
-                wisEligibility.color = "gray-500";
+                
+                // WIS check is performed regardless of mandatory scheme status, as WIS is based on NTI
+                // V2.9: WIS eligibility check now passes age
+                wisEligibility = checkWisEligibility(netIncome, age); 
+                
+                if (annualNti === 0) { // If NTI is 0, reset WIS to N/A
+                     // Unless the age check fails (age < 30)
+                     if (age >= 30) {
+                        wisEligibility.text = "N/A (NTI Zero)";
+                        wisEligibility.color = "gray-500";
+                     }
+                }
             } else {
                 // --- Proceed with CPF Calculation (Worker is in the mandatory scheme) ---
 
@@ -341,9 +360,11 @@
                 
                 // PCTS is calculated on NTI, regardless of age band
                 pctsAmount = calculatePctsAmount(year, netIncome);
-                wisEligibility = checkWisEligibility(netIncome);
+                
+                // V2.9: WIS eligibility check now passes age
+                wisEligibility = checkWisEligibility(netIncome, age);
             }
-            // --- End of V2.6 GUARDRAIL ---
+            // --- End of GUARDRAIL ---
 
 
             // 4. Display Results
@@ -393,3 +414,4 @@
 </body>
 
 </html>
+
