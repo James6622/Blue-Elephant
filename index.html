@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Platform Worker Financial Calculator (SG) V2.9</title>
+    <title>Platform Worker Financial Calculator (SG) V3.0</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -36,14 +36,14 @@
         class="w-full max-w-xl bg-white rounded-xl shadow-2xl overflow-hidden">
         <header class="bg-indigo-700 text-white p-6 text-center">
             <h1 class="text-2xl font-bold">Singapore Platform Worker Calculator</h1>
-            <!-- UPDATED VERSION TO V2.9 -->
-            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V2.9</p>
+            <!-- UPDATED VERSION TO V3.0 -->
+            <p class="text-sm opacity-90 mt-1">CPF, PCTS, and WIS Eligibility (2025-2028) - V3.0</p>
         </header>
         <!-- 1. Disclaimer Section -->
         <div class="p-4 bg-yellow-100 text-yellow-800 text-xs border-b border-yellow-300">
-            <!-- UPDATED DISCLAIMER FOR V2.9 -->
-            <p class="font-semibold mb-1">Disclaimer (V2.9 - WIS Age Check Included):</p>
-            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). The WIS check is based on the monthly income threshold (S$500-S$3,000) **and minimum age of 30**. Other criteria (Citizenship, Property ownership) are not verified here. Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
+            <!-- UPDATED DISCLAIMER FOR V3.0 -->
+            <p class="font-semibold mb-1">Disclaimer (V3.0 - WIS Age and PCTS Age Checks Included):</p>
+            <p>This calculator provides **estimates only** based on published rates for the Platform Worker CPF scheme (2025-2028). **WIS is restricted to workers aged 30-67.** **PCTS is restricted to workers aged 18-59.** Other criteria (Citizenship, Property ownership) are not verified here. Workers should **always consult the official CPF Board website or contact CPF directly** for personalized advice and accurate contribution amounts.</p>
         </div>
 
         <!-- Input Section (NO UI CHANGES) -->
@@ -122,7 +122,7 @@
                 <span class="font-medium text-gray-600">PCTS Amount:</span>
                 <span id="pctsValue" class="text-right font-bold text-lg text-indigo-600">$ 0.00</span>
 
-                <!-- REVERTED LABEL TEXT TO V2.8 FOR VISUAL CONSISTENCY -->
+                <!-- WIS Eligibility Label (Reverted to V2.8 text for visual consistency) -->
                 <span class="font-medium text-gray-600">WIS Eligibility (Income Check):</span>
                 <span id="wisValue" class="text-right font-bold text-lg text-gray-500">--</span>
             </div>
@@ -209,25 +209,39 @@
             return roundToTwoDecimals(netIncome);
         }
 
-        function calculatePctsAmount(year, netIncome) {
+        // V3.0: Updated to include age check for PCTS eligibility (Workers aged 60+ are ineligible)
+        function calculatePctsAmount(year, netIncome, age) {
             const PCTS_THRESHOLD = 3000;
+            const MAX_AGE_PCTS = 59; // PCTS is only for workers aged 18 to 59
+
+            // 1. Check Age Eligibility
+            if (age > MAX_AGE_PCTS) {
+                return 0;
+            }
+
+            // 2. Check Income Eligibility
             // PCTS applies only if NTI is below S$3,000
             if (netIncome >= PCTS_THRESHOLD) {
                 return 0;
             }
+            
             const pctsRate = PCTS_RATES[year] || 0;
             return roundToTwoDecimals(netIncome * pctsRate);
         }
         
-        // V2.9: Updated WIS eligibility checks to enforce minimum age 30
+        // WIS eligibility checks (Min Age 30)
         function checkWisEligibility(netIncome, age) {
             const MIN_INCOME_WIS = 500;
             const MAX_INCOME_WIS = 3000;
             const MIN_AGE_WIS = 30;
+            const MAX_AGE_WIS = 67; // Assumed max age for WIS payout
 
-            // 1. Check Age (Must be 30 years old or older)
+            // 1. Check Age (Must be 30 years old or older, and 67 or younger)
             if (age < MIN_AGE_WIS) {
                 return { text: "NOT ELIGIBLE (Below Minimum Age of 30)", color: "red-500" };
+            }
+            if (age > MAX_AGE_WIS) {
+                return { text: "NOT ELIGIBLE (Above Maximum Age of 67)", color: "red-500" };
             }
             
             // 2. Check Income range
@@ -331,12 +345,14 @@
                 lowIncomeWarning.classList.remove('hidden');
                 
                 // WIS check is performed regardless of mandatory scheme status, as WIS is based on NTI
-                // V2.9: WIS eligibility check now passes age
                 wisEligibility = checkWisEligibility(netIncome, age); 
                 
-                if (annualNti === 0) { // If NTI is 0, reset WIS to N/A
-                     // Unless the age check fails (age < 30)
-                     if (age >= 30) {
+                // PCTS is calculated on NTI, regardless of mandatory scheme status
+                // V3.0: Now passes age
+                pctsAmount = calculatePctsAmount(year, netIncome, age);
+
+                if (netIncome === 0) { // If NTI is 0, reset WIS to N/A (unless age check already failed)
+                     if (age >= 30 && age <= 67) {
                         wisEligibility.text = "N/A (NTI Zero)";
                         wisEligibility.color = "gray-500";
                      }
@@ -348,7 +364,7 @@
                 const owCeiling = OW_CEILINGS[year] || 0; 
                 const cpfCalculableIncome = Math.min(netIncome, owCeiling); 
 
-                // Calculate Worker's Share (V2.8 uses 3 age bands)
+                // Calculate Worker's Share 
                 const cpfRate = getCpfRate(year, age);
                 cpfContribution = roundToTwoDecimals(cpfCalculableIncome * cpfRate);
                 
@@ -359,9 +375,10 @@
                 totalCpf = roundToTwoDecimals(cpfContribution + sbContribution);
                 
                 // PCTS is calculated on NTI, regardless of age band
-                pctsAmount = calculatePctsAmount(year, netIncome);
+                // V3.0: Now passes age
+                pctsAmount = calculatePctsAmount(year, netIncome, age);
                 
-                // V2.9: WIS eligibility check now passes age
+                // WIS eligibility check 
                 wisEligibility = checkWisEligibility(netIncome, age);
             }
             // --- End of GUARDRAIL ---
@@ -414,4 +431,3 @@
 </body>
 
 </html>
-
